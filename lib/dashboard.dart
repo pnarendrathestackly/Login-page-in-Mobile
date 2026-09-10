@@ -340,6 +340,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: _Surface(
                         child: DashboardHeader(
                           title: _modulePage?.title ?? _section.label,
+                          breadcrumb: _module == null
+                              ? null
+                              : 'Home / ${_module!.title} / '
+                                  '${_modulePage!.title}',
                           user: user,
                           controller: widget.controller,
                           onMenu: wide

@@ -9,6 +9,7 @@ import '../../motion.dart';
 import '../../features/dashboard/models/dashboard_models.dart';
 import 'compact_search.dart';
 import 'notification_button.dart';
+import 'tenant_chip.dart';
 import 'profile_menu.dart';
 import 'sign_out_button.dart';
 
@@ -16,6 +17,7 @@ class DashboardHeader extends StatelessWidget {
   const DashboardHeader({
     super.key,
     required this.title,
+    this.breadcrumb,
     required this.user,
     required this.controller,
     this.onMenu,
@@ -29,6 +31,10 @@ class DashboardHeader extends StatelessWidget {
   });
 
   final String title;
+
+  /// Trail above the title, e.g. `Home / HRMS / Payroll`. Defaults to
+  /// `Home / <title>` when the route is not inside a module.
+  final String? breadcrumb;
   final AuthUser user;
   final AuthController controller;
   final VoidCallback? onMenu;
@@ -96,10 +102,29 @@ class DashboardHeader extends StatelessWidget {
                 ),
               ),
               if (!compact)
-                Text(
-                  'Home / $title',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, color: kMuted),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Which organization this session acts in. It sits on the
+                    // breadcrumb line, inside the header's flexible left zone:
+                    // the right zone is fixed-width, and adding to it pushes
+                    // the controls off screen on narrow laptops.
+                    if (controller.tenant != null) ...[
+                      // Not compact: this row already sits in the flexible
+                      // zone, and the chip's own maxWidth keeps a long name
+                      // from crowding the breadcrumb.
+                      TenantChip(tenant: controller.tenant!),
+                      const SizedBox(width: 8),
+                    ],
+                    Flexible(
+                      child: Text(
+                        breadcrumb ?? 'Home / $title',
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                        style: const TextStyle(fontSize: 12, color: kMuted),
+                      ),
+                    ),
+                  ],
                 ),
             ],
           ),
