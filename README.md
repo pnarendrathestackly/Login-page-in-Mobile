@@ -236,3 +236,23 @@ sign-out all route through that one interface.
   the login screen. Real session persistence belongs in the backend.
 - Session expiry exists as `AuthController.expireSession()` but nothing calls
   it — a real backend would trigger it on a 401.
+
+## Getting the demo OTP
+
+The demo backend generates the code **in the running app** — nothing is emailed
+or sent anywhere. To see it, run in debug and watch the same terminal:
+
+    flutter run -d chrome
+
+Sign in with `me@stackly.com` / `password123`. The code is created **by your
+first Sign In click**, not before it, so:
+
+1. Enter email + password, leave the OTP boxes empty, click **Sign In**.
+2. `DEMO OTP: 483927` prints in the terminal, and the same code appears on
+   screen next to "One-time password".
+3. Type it into the boxes and click **Sign In** again.
+
+It will not appear in a release build: `debugPrint` is stripped and the
+on-screen hint is suppressed by `kReleaseMode`, so a shipped build never leaks
+the code. That also means a release build cannot be signed into without a real
+`AuthBackend`.
