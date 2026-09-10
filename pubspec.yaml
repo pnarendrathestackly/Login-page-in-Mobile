@@ -1,0 +1,26 @@
+name: stackly_auth
+description: TheStackly two-step auth and dashboard (demo backend, frontend only).
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/Loginpage.jpeg
+    - assets/signup_art.jpg
+    - assets/google logo.png
+    - assets/github logo.png
+    - assets/Microsoft-logo .png
