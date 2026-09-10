@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
@@ -106,7 +105,18 @@ class DemoAuthBackend implements AuthBackend {
   static const resendCooldown = Duration(seconds: 30);
   static const maxAttempts = 5;
 
-  final _rng = Random.secure();
+  /// The code every sign-in accepts.
+  ///
+  /// Fixed rather than generated: this backend has no way to deliver a code,
+  /// so a random one only has to be read back off the screen anyway. A
+  /// constant makes the demo predictable and keeps tests from depending on
+  /// what was generated.
+  ///
+  /// SECURITY: a fixed code is not a second factor at all — anyone who knows
+  /// a password is through. That is acceptable ONLY because this whole backend
+  /// is a stand-in. A real [AuthBackend] generates a single-use code
+  /// server-side and never returns it to the client.
+  static const demoCode = '123456';
 
   String? _code;
 
@@ -204,8 +214,9 @@ class DemoAuthBackend implements AuthBackend {
   @override
   Future<void> sendCode(String email) async {
     await Future<void>.delayed(latency);
-    // A new code invalidates the previous one and resets the attempt budget.
-    _code = List.generate(codeLength, (_) => _rng.nextInt(10)).join();
+    // Always the same code — see [demoCode]. Still assigned per send so the
+    // expiry and attempt budget below behave exactly as a real flow would.
+    _code = demoCode;
     _issuedAt = DateTime.now();
     _attempts = 0;
     // Stands in for the email/SMS a server would send.

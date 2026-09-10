@@ -36,7 +36,7 @@ an HttpOnly + Secure + SameSite cookie. Route protection has to be enforced
 server-side too — the `AuthGate` in this app is a UX guard, not a security
 boundary.
 
-Demo accounts, all with password `password123`. They exist to exercise the
+Demo accounts, all with password `password123` and OTP `123456`. They exist to exercise the
 role system — each sees a different sidebar and is refused different routes:
 
 | Email | Role |
@@ -242,14 +242,19 @@ sign-out all route through that one interface.
 The demo backend generates the code **in the running app** — nothing is emailed
 or sent anywhere.
 
-**The code is shown on the login screen itself**, in an amber banner directly
-above the six OTP boxes. It appears only after the password step, because the
-code is created *by* that first submit:
+**The code is always `123456`.** It is also shown on the login screen in an
+amber banner above the six OTP boxes, after the password step:
 
 1. Enter `me@stackly.com` / `password123`, leave the OTP boxes empty, click
    **Sign In**.
-2. The banner appears: `Demo code: 483927`.
-3. Type it into the boxes and click **Sign In** again.
+2. The banner appears: `Demo code: 123456`.
+3. Type `123456` into the boxes and click **Sign In** again.
+
+A fixed code is **not a second factor** — anyone with a password is through.
+It is set that way only because this backend cannot deliver a code anywhere.
+It also means the single-use and resend-invalidation properties cannot be
+observed (a stale code is identical to a fresh one); the affected tests say so
+and should be tightened when a real `AuthBackend` is wired in.
 
 On web, `debugPrint` goes to the **browser console** (F12 → Console), not the
 terminal running `flutter run` — so the on-screen banner is the reliable place
