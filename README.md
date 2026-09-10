@@ -1,8 +1,19 @@
-# TheStackly — Two-Step Auth & Dashboard
+# OneCloud — Enterprise Platform
 
-A Flutter auth front end built to a supplied design mockup: split-panel
-layout, client-side form validation, brand social buttons, a two-step
-(password → OTP) sign-in flow, and an authenticated dashboard.
+*Unify People, Process, Data and Intelligence for a Smarter Tomorrow*
+
+The Flutter client for the OneCloud enterprise platform: a two-step
+(password → OTP) sign-in, a role-aware application shell, centralized
+routing with permission guards, multi-tenancy, and a registry of 16
+platform modules.
+
+**Scope, stated plainly:** this repository is the client tier. There is no
+server here — no API gateway, no microservices, no database, no message
+broker. The interfaces those attach to exist and are documented in
+[ARCHITECTURE.md](ARCHITECTURE.md), which also lists exactly what is built
+and what is not. Most module pages are routed and permission-checked but
+have no screen yet; they say so on screen rather than showing invented
+data.
 
 ## ⚠️ The OTP backend is a demo, not security
 
@@ -25,8 +36,22 @@ an HttpOnly + Secure + SameSite cookie. Route protection has to be enforced
 server-side too — the `AuthGate` in this app is a UX guard, not a security
 boundary.
 
-Demo credentials: `me@stackly.com` / `password123`. The generated code is
-printed to the console (`DEMO OTP: ...`).
+Demo accounts, all with password `password123`. They exist to exercise the
+role system — each sees a different sidebar and is refused different routes:
+
+| Email | Role |
+|---|---|
+| `me@stackly.com` | Super Admin (everything) |
+| `hr@onecloud.com` | HR Admin |
+| `finance@onecloud.com` | Finance Admin |
+| `sales@onecloud.com` | Sales Manager |
+| `employee@onecloud.com` | Employee (least privilege) |
+
+The generated OTP is printed to the console (`DEMO OTP: ...`).
+
+⚠️ Role and permission checks in this client are **UX guards, not security** —
+they decide what is shown, never what is permitted. A real deployment must
+re-authorize every request server-side. See [ARCHITECTURE.md](ARCHITECTURE.md) §5.
 
 
 ## Running it
@@ -46,7 +71,7 @@ continuing.
     cd Login_Page
     flutter pub get
 
-Pulls `flutter_svg` and `flutter_lints`.
+Pulls `provider` and `flutter_lints`.
 
 ### 3. Pick a device
 
@@ -67,27 +92,37 @@ In the terminal: `r` hot reload, `R` hot restart, `q` quit.
 
     flutter test
 
-27 tests:
+189 tests:
 
 | File | Covers |
 |------|--------|
 | `validators_test.dart` | Email and password rules. |
 | `auth_test.dart` | OTP single-use, expiry, resend invalidating the previous code, attempt cap, sign-out, session expiry. |
 | `flow_test.dart` | The real widget tree: password alone does not reach the dashboard, paste auto-verifies, sign-out returns to login. |
-| `responsive_test.dart` | No layout overflow at phone / tablet / desktop widths; mobile drawer opens. |
+| `permissions_test.dart` | Grants and denials, module-registry consistency, guard rules, tenant scoping. |
+| `rbac_flow_test.dart` | Authorization end-to-end through the real router: what each role can open and is refused. |
+| `router_test.dart`, `navigation_test.dart` | Routing, deep links, sidebar highlight following the URL. |
+| `pages_test.dart`, `responsive_test.dart` | No layout overflow at 375–1920px; mobile drawer opens. |
+
+Writing new widget tests: the shell animates continuously, so `pumpAndSettle`
+never returns — use the bounded `step()` helper the suite already has, and
+`unawaited()` for auth calls.
 
 
 ## Project layout
 
 | File | Responsibility |
 |------|----------------|
-| `lib/main.dart` | App entry, theme, brand colour constants, and `AuthGate` — the single place that maps auth state to a screen. |
-| `lib/auth.dart` | `AuthStatus`, `AuthController` (state), `AuthBackend` (the seam a real server plugs into) and `DemoAuthBackend`. |
-| `lib/widgets.dart` | Shared pieces: layout shell, form field, buttons, message banner, social row, validators. |
-| `lib/login_page.dart` | Step 1 — email + password. |
-| `lib/verify_page.dart` | Step 2 — OTP entry, resend countdown, back to sign-in. |
+| `lib/main.dart` | App entry, theme, brand colour constants, provider registration. |
+| `lib/router/app_router.dart` | **The** routing source of truth: route names, table, guards, page stack. |
+| `lib/core/platform/permissions.dart` | Permission vocabulary, 15 roles, resolved `PermissionSet`. |
+| `lib/core/platform/modules.dart` | The 16-module registry — one entry gives a page its route, sidebar row and permission. |
+| `lib/core/platform/tenant.dart` | Tenant identity for multi-tenancy. |
+| `lib/auth.dart` | `AuthStatus`, `AuthController`, `AuthBackend` (the seam a real server plugs into), `DemoAuthBackend`. |
+| `lib/dashboard.dart` | Authenticated shell — sidebar, header, section and module page dispatch. |
+| `lib/features/` | Per-domain screens. |
+| `lib/widgets/` | Sidebar, header and shared UI. |
 | `lib/otp_field.dart` | Six-box code input: auto-advance, paste, backspace navigation. |
-| `lib/dashboard.dart` | Authenticated shell — sidebar, header, cards, sign-out. |
 | `lib/signup_page.dart` | Registration form. |
 
 ## The two-step flow
@@ -96,9 +131,10 @@ In the terminal: `r` hot reload, `R` hot restart, `q` quit.
                                        (password OK,          (OTP OK,
                                         NOT logged in)         dashboard)
 
-`AuthGate` swaps screens on state rather than pushing routes, so there is no
-navigation history to go "back" into after signing out, and a user in
-`awaitingVerification` has no route to the dashboard at all.
+`applyGuards` in the router decides this, and it is the only place that does.
+A user in `awaitingVerification` holds no permissions and has no route to the
+dashboard at all; signing out re-runs the guards, so an expired session leaves
+a protected screen on its own.
 
 
 ## How the layout works
