@@ -15,14 +15,18 @@ class AuthScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final narrow = MediaQuery.sizeOf(context).width < 900;
+    final size = MediaQuery.sizeOf(context);
+    final narrow = size.width < 900;
+    // Matches the threshold the auth forms use, so the card and the form agree
+    // about when space is tight.
+    final shortViewport = size.height < 820;
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1180),
             child: Container(
-              margin: const EdgeInsets.all(24),
+              margin: EdgeInsets.all(shortViewport ? 12 : 24),
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -44,20 +48,28 @@ class AuthScaffold extends StatelessWidget {
                       behavior: ScrollConfiguration.of(context)
                           .copyWith(scrollbars: false),
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(
+                        // Vertical padding is tighter than horizontal on
+                        // purpose: the card has to clear a 768px-tall laptop
+                        // viewport, and height is the only axis that is short.
+                        padding: EdgeInsets.symmetric(
                           horizontal: 40,
-                          vertical: 40,
+                          vertical: shortViewport ? 18 : 28,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const FadeIn(
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: NavLinks(),
+                            // Marketing nav, not part of signing in: it is the
+                            // first thing to go when the form has to clear the
+                            // fold on a short screen.
+                            if (!shortViewport) ...[
+                              const FadeIn(
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+                                  child: NavLinks(),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 36),
+                              const SizedBox(height: 20),
+                            ],
                             FadeIn(delay: Motion.stagger, child: form),
                           ],
                         ),
@@ -494,18 +506,39 @@ class OrDivider extends StatelessWidget {
 }
 
 class SocialRow extends StatelessWidget {
-  const SocialRow({super.key});
+  const SocialRow({super.key, this.compact = false});
+
+  /// Shorter buttons for short viewports. The providers stay available —
+  /// removing sign-in options to save space would cost a user their only way
+  /// in — they simply take less vertical room.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: const [
-        Expanded(child: _SocialButton('Google', 'assets/google logo.png')),
-        SizedBox(width: 12),
-        Expanded(child: _SocialButton('GitHub', 'assets/github logo.png')),
-        SizedBox(width: 12),
+      children: [
         Expanded(
-          child: _SocialButton('Microsoft', 'assets/Microsoft-logo .png'),
+          child: _SocialButton(
+            'Google',
+            'assets/google logo.png',
+            compact: compact,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _SocialButton(
+            'GitHub',
+            'assets/github logo.png',
+            compact: compact,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _SocialButton(
+            'Microsoft',
+            'assets/Microsoft-logo .png',
+            compact: compact,
+          ),
         ),
       ],
     );
@@ -513,10 +546,11 @@ class SocialRow extends StatelessWidget {
 }
 
 class _SocialButton extends StatefulWidget {
-  const _SocialButton(this.label, this.logo);
+  const _SocialButton(this.label, this.logo, {this.compact = false});
 
   final String label;
   final String logo;
+  final bool compact;
 
   @override
   State<_SocialButton> createState() => _SocialButtonState();
@@ -539,7 +573,7 @@ class _SocialButtonState extends State<_SocialButton> {
         child: OutlinedButton(
           onPressed: () {},
           style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 14),
+            padding: EdgeInsets.symmetric(vertical: widget.compact ? 8 : 14),
             side: BorderSide(color: _hovered ? kIndigo : kBorder),
             backgroundColor:
                 _hovered ? kIndigo.withValues(alpha: .04) : Colors.transparent,
@@ -553,7 +587,11 @@ class _SocialButtonState extends State<_SocialButton> {
             child: Semantics(
               label: 'Continue with ${widget.label}',
               button: true,
-              child: Image.asset(widget.logo, height: 32, fit: BoxFit.contain),
+              child: Image.asset(
+                widget.logo,
+                height: widget.compact ? 22 : 32,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
         ),

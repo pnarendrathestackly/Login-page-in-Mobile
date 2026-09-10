@@ -68,6 +68,11 @@ class _LoginFormState extends State<LoginForm> {
     // Rebuilds on auth changes only — the hero art beside this form does not.
     final auth = context.watch<AuthProvider>();
     final busy = auth.busy;
+
+    // Short viewport (a 1366x768 laptop, the tightest common desktop): tighten
+    // the optional chrome so the whole form clears the fold. Measured against
+    // the worst case — demo-code banner AND an error banner both visible.
+    final shortViewport = MediaQuery.sizeOf(context).height < 820;
     final codeComplete = _code.length == OtpField.defaultLength;
 
     return Form(
@@ -78,16 +83,18 @@ class _LoginFormState extends State<LoginForm> {
           const Text(
             'Welcome Back',
             style: TextStyle(
-              fontSize: 30,
+              fontSize: 26,
               fontWeight: FontWeight.w800,
               color: kInk,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Enter your credentials and one-time password to sign in.',
-            style: TextStyle(fontSize: 15, color: kMuted),
-          ),
+          if (!shortViewport) ...[
+            const SizedBox(height: 8),
+            const Text(
+              'Enter your credentials and one-time password to sign in.',
+              style: TextStyle(fontSize: 14, color: kMuted),
+            ),
+          ],
           ExpandFade(
             visible: auth.error != null,
             child: Padding(
@@ -102,7 +109,7 @@ class _LoginFormState extends State<LoginForm> {
               child: AuthMessage(text: auth.notice ?? '', isError: false),
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 20),
           AuthField(
             hint: 'Email address',
             icon: Icons.mail_outline,
@@ -110,7 +117,7 @@ class _LoginFormState extends State<LoginForm> {
             keyboardType: TextInputType.emailAddress,
             validator: emailValidator,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           AuthField(
             hint: 'Password',
             icon: Icons.lock_outline,
@@ -118,7 +125,7 @@ class _LoginFormState extends State<LoginForm> {
             obscure: true,
             validator: passwordValidator,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           // Directly below the password, per spec — not a separate screen.
           LoginOtpField(
             otpKey: _otpKey,
@@ -138,7 +145,7 @@ class _LoginFormState extends State<LoginForm> {
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: shortViewport ? 2 : 8),
           // Wrap so "Forgot password?" drops below the checkbox on a narrow
           // screen rather than overflowing the row.
           Wrap(
@@ -151,6 +158,12 @@ class _LoginFormState extends State<LoginForm> {
                   Checkbox(
                     value: _remember,
                     activeColor: kIndigo,
+                    // Trims the 48px default tap target to 40 on short
+                    // viewports. Not smaller: this is still a pointer target
+                    // and must stay comfortably clickable.
+                    visualDensity: shortViewport
+                        ? const VisualDensity(horizontal: -2, vertical: -2)
+                        : VisualDensity.standard,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
                     ),
@@ -175,18 +188,18 @@ class _LoginFormState extends State<LoginForm> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: shortViewport ? 8 : 12),
           PrimaryButton(
             label: 'Sign In',
             loading: busy,
             loadingLabel: 'Signing in...',
             onTap: _submit,
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: shortViewport ? 12 : 16),
           const OrDivider(label: 'Or continue with'),
-          const SizedBox(height: 20),
-          const SocialRow(),
-          const SizedBox(height: 20),
+          SizedBox(height: shortViewport ? 10 : 14),
+          SocialRow(compact: shortViewport),
+          SizedBox(height: shortViewport ? 8 : 14),
           FooterPrompt(
             text: "Don't have an account?",
             action: 'Sign up',

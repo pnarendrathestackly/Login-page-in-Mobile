@@ -57,10 +57,10 @@ class LoginOtpField extends StatelessWidget {
         // prominent — there is no mail/SMS service here, and a hint small
         // enough to miss leaves the app impossible to sign into.
         if (demoCode != null) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           _DemoCodeBanner(code: demoCode!),
         ],
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         OtpField(
           key: otpKey,
           enabled: enabled,
@@ -86,7 +86,7 @@ class _DemoCodeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
         color: const Color(0xFFFEF3C7),
         borderRadius: BorderRadius.circular(8),
