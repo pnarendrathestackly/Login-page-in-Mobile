@@ -240,17 +240,21 @@ sign-out all route through that one interface.
 ## Getting the demo OTP
 
 The demo backend generates the code **in the running app** — nothing is emailed
-or sent anywhere. To see it, run in debug and watch the same terminal:
+or sent anywhere.
 
-    flutter run -d chrome
+**The code is shown on the login screen itself**, in an amber banner directly
+above the six OTP boxes. It appears only after the password step, because the
+code is created *by* that first submit:
 
-Sign in with `me@stackly.com` / `password123`. The code is created **by your
-first Sign In click**, not before it, so:
-
-1. Enter email + password, leave the OTP boxes empty, click **Sign In**.
-2. `DEMO OTP: 483927` prints in the terminal, and the same code appears on
-   screen next to "One-time password".
+1. Enter `me@stackly.com` / `password123`, leave the OTP boxes empty, click
+   **Sign In**.
+2. The banner appears: `Demo code: 483927`.
 3. Type it into the boxes and click **Sign In** again.
+
+On web, `debugPrint` goes to the **browser console** (F12 → Console), not the
+terminal running `flutter run` — so the on-screen banner is the reliable place
+to look. On Windows desktop (`flutter run -d windows`) it does print to the
+terminal.
 
 It will not appear in a release build: `debugPrint` is stripped and the
 on-screen hint is suppressed by `kReleaseMode`, so a shipped build never leaks

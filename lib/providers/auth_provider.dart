@@ -39,7 +39,11 @@ class AuthProvider extends AuthController {
     if (codeJustSent) {
       // Saying "incorrect code" here would be wrong: the code they typed was
       // never valid because the real one has only just been issued.
-      setError('We sent you a code. Enter it below to finish signing in.');
+      // Deliberately does not claim the code was sent anywhere: there is no
+      // mail or SMS service in this project, and telling the user to check an
+      // inbox that will never receive anything is how this flow becomes
+      // impossible to complete. A real backend should change this wording.
+      setError('Enter the 6-digit code shown below to finish signing in.');
       return;
     }
 

@@ -33,9 +33,12 @@ void main() {
       password: 'password123',
       code: '123456',
     );
-    // A code is now on its way, and the user is told what happened.
+    // A code now exists and the user is told to enter it. Asserting the
+    // behaviour rather than the exact sentence: the wording must NOT claim the
+    // code was mailed anywhere, because nothing sends it.
     expect(code, isNotNull);
-    expect(auth.error, contains('sent you a code'));
+    expect(auth.error, isNotNull);
+    expect(auth.error, isNot(contains('sent')));
     expect(auth.status, AuthStatus.awaitingVerification);
   });
 }
