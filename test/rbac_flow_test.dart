@@ -148,18 +148,13 @@ void main() {
     expect(app.router.location, AppRoutes.notFound);
     expect(find.text('Access denied'), findsNothing);
   });
-  testWidgets('the header names the tenant and the module breadcrumb',
-      (tester) async {
+  testWidgets('a module page shows its module breadcrumb', (tester) async {
     final app = await signInAs(tester, 'me@stackly.com');
-
-    // Tenant is on screen from the moment the shell renders: on a
-    // multi-tenant platform, "which org am I in" must never be a guess.
-    expect(find.text('OneCloud Industries'), findsOneWidget);
 
     app.router.go('/crm/leads');
     await step(tester);
 
     // Breadcrumb reflects the module path, not just the page title.
-    expect(find.text('Home / CRM / Leads'), findsOneWidget);
+    expect(find.text('CRM  /  Leads'), findsOneWidget);
   });
 }

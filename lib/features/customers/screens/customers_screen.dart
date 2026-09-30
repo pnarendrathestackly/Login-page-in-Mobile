@@ -438,9 +438,7 @@ class _CustomersPageState extends State<CustomersPage>
           if (visible.isEmpty)
             EmptyState(
               icon: isFiltering ? Icons.search_off : Icons.business_outlined,
-              title: isFiltering
-                  ? 'No matching customers'
-                  : 'No customers yet',
+              title: isFiltering ? 'No matching customers' : 'No customers yet',
               message: isFiltering
                   ? 'Try a different search term or clear the filters.'
                   : 'Add your first customer account to start tracking work.',
@@ -510,7 +508,7 @@ class _TopAccounts extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFAFAFE),
+                        color: kInset,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: kBorder),
                       ),
@@ -519,7 +517,8 @@ class _TopAccounts extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              InitialsAvatar(name: customer.company, radius: 14),
+                              InitialsAvatar(
+                                  name: customer.company, radius: 14),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -547,8 +546,7 @@ class _TopAccounts extends StatelessWidget {
                           Text(
                             '${customer.projects} active '
                             '${customer.projects == 1 ? 'project' : 'projects'}',
-                            style:
-                                const TextStyle(fontSize: 12, color: kMuted),
+                            style: const TextStyle(fontSize: 12, color: kMuted),
                           ),
                         ],
                       ),
@@ -583,7 +581,7 @@ class _CustomerCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFE),
+        color: kInset,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: kBorder),
       ),

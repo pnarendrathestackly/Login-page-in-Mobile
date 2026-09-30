@@ -310,8 +310,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('clear all confirms before emptying the inbox',
-        (tester) async {
+    testWidgets('clear all confirms before emptying the inbox', (tester) async {
       await open(tester, DashboardSection.notifications);
 
       await tester.tap(find.text('Clear all'));

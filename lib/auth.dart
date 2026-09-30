@@ -51,10 +51,18 @@ class AuthUser {
 /// Raised for anything the user should see a message about. The message is
 /// always safe to display — no server internals reach the UI through it.
 class AuthException implements Exception {
-  const AuthException(this.message);
+  const AuthException(this.message, {this.detail, this.lockedUntil});
   final String message;
+
+  /// A secondary line under [message] — e.g. how many attempts are left.
+  final String? detail;
+
+  /// When a lockout lifts. Set only on the locked-out rejection, so the UI can
+  /// show the lock screen and count down to it.
+  final DateTime? lockedUntil;
+
   @override
-  String toString() => message;
+  String toString() => detail == null ? message : '$message $detail';
 }
 
 /// The seam a real backend plugs into.
@@ -63,10 +71,18 @@ class AuthException implements Exception {
 /// against your API and the UI needs no changes.
 abstract class AuthBackend {
   /// Creates an account. Throws [AuthException] if the email is taken.
+  ///
+  /// [organization], [workspace], [mobile] and [username] come from the
+  /// sign-up wizard. They are optional so an existing caller (or a backend
+  /// that does not model them) keeps working.
   Future<AuthUser> register({
     required String name,
     required String email,
     required String password,
+    String? organization,
+    String? workspace,
+    String? mobile,
+    String? username,
   });
 
   /// Verifies the password. Returns the user the OTP was sent to.
@@ -79,6 +95,29 @@ abstract class AuthBackend {
   Future<AuthUser> verifyCode(String email, String code);
 
   Future<void> signOut();
+
+  /// Whether a workspace with this slug exists.
+  Future<bool> workspaceExists(String slug);
+
+  /// The workspace slug for an account, or null when there is none.
+  Future<String?> findWorkspace(String email);
+
+  /// Replaces the password. Throws [AuthException] if [current] is wrong or
+  /// [next] breaks the password rules.
+  Future<void> changePassword(String email, String current, String next);
+
+  /// Issues a reset code when the account exists. Completes normally either
+  /// way, so the response never reveals which emails have accounts.
+  Future<void> requestPasswordReset(String email);
+
+  /// Consumes a reset code and sets [next] as the password.
+  Future<void> resetPassword(String email, String code, String next);
+
+  /// Disables the account; sign-in is refused until an admin re-enables it.
+  Future<void> deactivateAccount(String email);
+
+  /// Permanently removes the account.
+  Future<void> deleteAccount(String email);
 }
 
 /// In-memory stand-in for a real auth server.
@@ -104,6 +143,9 @@ class DemoAuthBackend implements AuthBackend {
   static const codeLifetime = Duration(minutes: 5);
   static const resendCooldown = Duration(seconds: 30);
   static const maxAttempts = 5;
+
+  /// How long an account stays locked after [maxAttempts] failures.
+  static const lockoutDuration = Duration(minutes: 15);
 
   /// The code every sign-in accepts.
   ///
@@ -131,6 +173,15 @@ class DemoAuthBackend implements AuthBackend {
   // ponytail: in-memory user store, passwords in plain text. A real backend
   // stores a salted hash and never holds the password at all. Seeded with one
   // account so the app is usable without signing up first.
+  /// Accounts an administrator has to re-enable before they can sign in.
+  final Set<String> _deactivated = {};
+
+  /// The email a password-reset code was issued for, so a code issued for one
+  /// account cannot reset another.
+  String? _resetEmail;
+
+  static const minPasswordLength = 8;
+
   final Map<String, ({String password, String name, PlatformRole role})>
       _users = {
     'me@stackly.com': (
@@ -158,6 +209,21 @@ class DemoAuthBackend implements AuthBackend {
       name: 'Sam Whitfield',
       role: PlatformRole.employee,
     ),
+    'vishnu@gmail.com': (
+      password: 'Vishnu@123',
+      name: 'Vishnu',
+      role: PlatformRole.superAdmin,
+    ),
+    'narendra@gmail.com': (
+      password: 'Narendra@123',
+      name: 'Narendra',
+      role: PlatformRole.superAdmin,
+    ),
+    'narendra@mail.com': (
+      password: 'Narendra@123',
+      name: 'Narendra',
+      role: PlatformRole.superAdmin,
+    ),
   };
 
   /// The tenant every demo account belongs to. A real backend derives this
@@ -165,6 +231,7 @@ class DemoAuthBackend implements AuthBackend {
   static const _demoTenant = Tenant(
     id: 'tnt_onecloud',
     name: 'OneCloud Industries',
+    slug: 'acmecorp',
   );
 
   @override
@@ -172,33 +239,124 @@ class DemoAuthBackend implements AuthBackend {
     required String name,
     required String email,
     required String password,
+    String? organization,
+    String? workspace,
+    String? mobile,
+    String? username,
   }) async {
     await Future<void>.delayed(latency);
     final normalized = email.trim().toLowerCase();
     if (_users.containsKey(normalized)) {
       throw const AuthException('An account with that email already exists.');
     }
-    // Self-registration grants the least-privileged role. Elevation is an
-    // administrative action, never something a sign-up form can request.
-    const role = PlatformRole.employee;
-    _users[normalized] =
-        (password: password, name: name.trim(), role: role);
+    final handle = username?.trim().toLowerCase();
+    if (handle != null &&
+        handle.isNotEmpty &&
+        _usernames.values.contains(handle)) {
+      throw const AuthException('That username is already taken.');
+    }
+
+    // The role is decided HERE, never requested by the form: whoever creates a
+    // brand-new organization owns it, everyone else joins as an employee. A
+    // sign-up that could name its own role would be a privilege escalation.
+    final org = organization?.trim() ?? '';
+    final firstInOrg = org.isNotEmpty &&
+        !_organizations.values.any((o) => o.toLowerCase() == org.toLowerCase());
+    final role =
+        firstInOrg ? PlatformRole.superAdmin : PlatformRole.employee;
+
+    _users[normalized] = (password: password, name: name.trim(), role: role);
+    if (org.isNotEmpty) _organizations[normalized] = org;
+    if (mobile != null && mobile.trim().isNotEmpty) {
+      _mobiles[normalized] = mobile.trim();
+    }
+    if (handle != null && handle.isNotEmpty) _usernames[normalized] = handle;
+
     return AuthUser(
       name: name.trim(),
       email: normalized,
       role: role.label,
-      tenant: _demoTenant,
-      roles: const [role],
+      tenant: org.isEmpty
+          ? _demoTenant
+          : Tenant(
+              id: 'tnt_${_slug(workspace?.trim().isNotEmpty == true ? workspace! : org)}',
+              name: org,
+              slug: _slug(
+                workspace?.trim().isNotEmpty == true ? workspace! : org,
+              ),
+            ),
+      roles: [role],
     );
   }
+
+  /// "ABC Technologies Pvt Ltd" -> "abctechnologiespvtltd", the workspace
+  /// slug a new organization signs in under.
+  static String _slug(String name) =>
+      name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+  /// Profile details captured at sign-up, keyed by email.
+  final Map<String, String> _organizations = {};
+  final Map<String, String> _mobiles = {};
+  final Map<String, String> _usernames = {};
+
+  /// Failed password attempts per account, so the form can warn before the
+  /// lockout the sign-in footer promises. Cleared on a successful password.
+  final Map<String, int> _passwordAttempts = {};
+
+  /// When each locked-out account becomes usable again. A lock that never
+  /// lifted would need an administrator for every mistyped password.
+  final Map<String, DateTime> _lockedUntil = {};
 
   @override
   Future<AuthUser> signIn(String email, String password) async {
     await Future<void>.delayed(latency);
     final normalized = email.trim().toLowerCase();
     final record = _users[normalized];
+
+    final until = _lockedUntil[normalized];
+    if (until != null) {
+      if (DateTime.now().isBefore(until)) {
+        throw AuthException(
+          'Too many failed attempts.',
+          detail: 'This account is locked. Try again later or reset your '
+              'password.',
+          lockedUntil: until,
+        );
+      }
+      // The lock has expired: clear it and let this attempt through.
+      _lockedUntil.remove(normalized);
+      _passwordAttempts.remove(normalized);
+    }
+
     if (record == null || record.password != password) {
-      throw const AuthException('Incorrect email or password.');
+      // Counted against the address whether or not it exists, so a wrong
+      // guess cannot use the attempt count to learn that an account is real.
+      final used = (_passwordAttempts[normalized] ?? 0) + 1;
+      _passwordAttempts[normalized] = used;
+      final left = maxAttempts - used;
+      if (left > 0) {
+        throw AuthException(
+          'Incorrect email or password.',
+          detail: '$left ${left == 1 ? 'attempt' : 'attempts'} remaining '
+              'before lockout.',
+        );
+      }
+      final locked = DateTime.now().add(lockoutDuration);
+      _lockedUntil[normalized] = locked;
+      throw AuthException(
+        'Too many failed attempts.',
+        detail: 'This account is locked. Try again later or reset your '
+            'password.',
+        lockedUntil: locked,
+      );
+    }
+    _passwordAttempts.remove(normalized);
+    // Checked only after the password, so a wrong guess cannot learn that an
+    // account exists but is disabled.
+    if (_deactivated.contains(normalized)) {
+      throw const AuthException(
+        'This account is deactivated. Contact your administrator.',
+      );
     }
     _pendingUser = AuthUser(
       name: record.name,
@@ -227,6 +385,14 @@ class DemoAuthBackend implements AuthBackend {
   @override
   Future<AuthUser> verifyCode(String email, String code) async {
     await Future<void>.delayed(latency);
+    _checkCode(code);
+    final user = _pendingUser!;
+    _invalidate(); // single-use: the code cannot be replayed.
+    return user;
+  }
+
+  /// Expiry, attempt budget and match — shared by sign-in and password reset.
+  void _checkCode(String code) {
     final issued = _issuedAt;
     if (_code == null || issued == null) {
       throw const AuthException('No code requested. Request a new one.');
@@ -250,9 +416,6 @@ class DemoAuthBackend implements AuthBackend {
             : 'Too many incorrect attempts. Request a new code.',
       );
     }
-    final user = _pendingUser!;
-    _invalidate(); // single-use: the code cannot be replayed.
-    return user;
   }
 
   @override
@@ -266,6 +429,100 @@ class DemoAuthBackend implements AuthBackend {
     _code = null;
     _issuedAt = null;
     _attempts = 0;
+    _resetEmail = null;
+  }
+
+  void _checkPassword(String password) {
+    if (password.length < minPasswordLength) {
+      throw const AuthException(
+        'Password must be at least $minPasswordLength characters.',
+      );
+    }
+  }
+
+  @override
+  Future<bool> workspaceExists(String slug) async {
+    await Future<void>.delayed(latency);
+    return slug.trim().toLowerCase() == _demoTenant.slug;
+  }
+
+  // SECURITY: answering with the workspace reveals which emails have accounts.
+  // Acceptable only in this demo, which cannot send email; a real server
+  // emails the workspace link and gives every caller the same response.
+  @override
+  Future<String?> findWorkspace(String email) async {
+    await Future<void>.delayed(latency);
+    return _users.containsKey(email.trim().toLowerCase())
+        ? _demoTenant.slug
+        : null;
+  }
+
+  @override
+  Future<void> changePassword(
+    String email,
+    String current,
+    String next,
+  ) async {
+    await Future<void>.delayed(latency);
+    final key = email.trim().toLowerCase();
+    final record = _users[key];
+    if (record == null || record.password != current) {
+      throw const AuthException('Your current password is incorrect.');
+    }
+    _checkPassword(next);
+    if (next == current) {
+      throw const AuthException(
+        'Choose a new password that differs from the current one.',
+      );
+    }
+    _users[key] = (password: next, name: record.name, role: record.role);
+  }
+
+  @override
+  Future<void> requestPasswordReset(String email) async {
+    await Future<void>.delayed(latency);
+    final key = email.trim().toLowerCase();
+    if (!_users.containsKey(key)) return; // same response: no enumeration
+    await sendCode(key);
+    _resetEmail = key;
+  }
+
+  @override
+  Future<void> resetPassword(String email, String code, String next) async {
+    await Future<void>.delayed(latency);
+    final key = email.trim().toLowerCase();
+    if (_resetEmail != key) {
+      // Same wording as a wrong code, so this does not reveal whether the
+      // email has an account.
+      throw const AuthException(
+        'That code is invalid or has expired. Request a new one.',
+      );
+    }
+    _checkCode(code);
+    _checkPassword(next);
+    final record = _users[key]!;
+    _users[key] = (password: next, name: record.name, role: record.role);
+    _invalidate();
+  }
+
+  @override
+  Future<void> deactivateAccount(String email) async {
+    await Future<void>.delayed(latency);
+    final key = email.trim().toLowerCase();
+    if (!_users.containsKey(key)) {
+      throw const AuthException('That account no longer exists.');
+    }
+    _deactivated.add(key);
+  }
+
+  @override
+  Future<void> deleteAccount(String email) async {
+    await Future<void>.delayed(latency);
+    final key = email.trim().toLowerCase();
+    if (_users.remove(key) == null) {
+      throw const AuthException('That account no longer exists.');
+    }
+    _deactivated.remove(key);
   }
 }
 
@@ -279,6 +536,8 @@ class AuthController extends ChangeNotifier {
   AuthStatus _status = AuthStatus.unauthenticated;
   AuthUser? _user;
   String? _error;
+  String? _errorDetail;
+  DateTime? _lockedUntil;
   bool _busy = false;
   String? _notice;
 
@@ -298,16 +557,36 @@ class AuthController extends ChangeNotifier {
   Tenant? get tenant =>
       _status == AuthStatus.authenticated ? _user?.tenant : null;
 
-  /// The code the demo backend just "sent", so the verify screen can display
-  /// it in debug builds. Null in release, and null for any real backend —
-  /// a server never hands the code back to the client.
+  /// The code the demo backend accepts, so the login form can display it in
+  /// debug builds. Null in release, and null for any real backend — a server
+  /// never hands the code back to the client.
+  ///
+  /// Reports the demo backend's FIXED code rather than only the outstanding
+  /// one: the code is a constant, and the login form asks for it in the same
+  /// submit as the password. Gating this on a code having already been "sent"
+  /// meant the hint only appeared after a failed sign-in, which is exactly
+  /// when the user no longer needs telling.
   String? get demoCode {
     if (kReleaseMode) return null;
     final backend = _backend;
-    return backend is DemoAuthBackend ? backend.lastCode : null;
+    if (backend is! DemoAuthBackend) return null;
+    // Once signed in there is nothing left to prompt for, so the hint goes
+    // away rather than sitting on the dashboard.
+    if (_status == AuthStatus.authenticated) return null;
+    return backend.lastCode ?? DemoAuthBackend.demoCode;
   }
 
   String? get error => _error;
+
+  /// Second line under [error], when the backend supplied one (for example
+  /// how many sign-in attempts remain).
+  String? get errorDetail => _errorDetail;
+
+  /// When the current lockout lifts, or null when the account is not locked.
+  DateTime? get lockedUntil =>
+      _lockedUntil != null && DateTime.now().isBefore(_lockedUntil!)
+          ? _lockedUntil
+          : null;
   String? get notice => _notice;
   bool get busy => _busy;
 
@@ -325,6 +604,8 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearError() => setError(null);
+
   void clearNotice() {
     if (_notice == null) return;
     _notice = null;
@@ -335,6 +616,8 @@ class AuthController extends ChangeNotifier {
     if (_busy) return; // guards against duplicate submits
     _busy = true;
     _error = null;
+    _errorDetail = null;
+    _lockedUntil = null;
     _notice = null;
     _status = AuthStatus.authenticating;
     notifyListeners();
@@ -345,10 +628,13 @@ class AuthController extends ChangeNotifier {
       _status = AuthStatus.unauthenticated;
       _user = null;
       _error = e.message;
+      _errorDetail = e.detail;
+      _lockedUntil = e.lockedUntil;
     } catch (_) {
       _status = AuthStatus.unauthenticated;
       _user = null;
       _error = 'Something went wrong. Please try again.';
+      _errorDetail = null;
     } finally {
       _busy = false;
       notifyListeners();
@@ -362,13 +648,27 @@ class AuthController extends ChangeNotifier {
     required String name,
     required String email,
     required String password,
+    String? organization,
+    String? workspace,
+    String? mobile,
+    String? username,
   }) async {
     if (_busy) return null;
     _busy = true;
     _error = null;
+    _errorDetail = null;
+    _lockedUntil = null;
     notifyListeners();
     try {
-      await _backend.register(name: name, email: email, password: password);
+      await _backend.register(
+        name: name,
+        email: email,
+        password: password,
+        organization: organization,
+        workspace: workspace,
+        mobile: mobile,
+        username: username,
+      );
       return null;
     } on AuthException catch (e) {
       return e.message;
@@ -384,14 +684,19 @@ class AuthController extends ChangeNotifier {
     if (_busy || _status != AuthStatus.awaitingVerification) return;
     _busy = true;
     _error = null;
+    _errorDetail = null;
+    _lockedUntil = null;
     notifyListeners();
     try {
       _user = await _backend.verifyCode(_user!.email, code);
       _status = AuthStatus.authenticated;
     } on AuthException catch (e) {
       _error = e.message;
+      _errorDetail = e.detail;
+      _lockedUntil = e.lockedUntil;
     } catch (_) {
       _error = 'Verification failed. Please try again.';
+      _errorDetail = null;
     } finally {
       _busy = false;
       notifyListeners();
@@ -402,14 +707,19 @@ class AuthController extends ChangeNotifier {
     if (_busy || _status != AuthStatus.awaitingVerification) return;
     _busy = true;
     _error = null;
+    _errorDetail = null;
+    _lockedUntil = null;
     notifyListeners();
     try {
       await _backend.sendCode(_user!.email);
       _notice = 'A new code is on its way.';
     } on AuthException catch (e) {
       _error = e.message;
+      _errorDetail = e.detail;
+      _lockedUntil = e.lockedUntil;
     } catch (_) {
       _error = 'Could not resend the code. Please try again.';
+      _errorDetail = null;
     } finally {
       _busy = false;
       notifyListeners();
@@ -422,6 +732,8 @@ class AuthController extends ChangeNotifier {
     _status = AuthStatus.unauthenticated;
     _user = null;
     _error = null;
+    _errorDetail = null;
+    _lockedUntil = null;
     _notice = null;
     notifyListeners();
   }
@@ -433,6 +745,8 @@ class AuthController extends ChangeNotifier {
     _status = AuthStatus.unauthenticated;
     _user = null;
     _error = null;
+    _errorDetail = null;
+    _lockedUntil = null;
     _notice = notice;
     _busy = false;
     notifyListeners();
@@ -441,4 +755,99 @@ class AuthController extends ChangeNotifier {
   /// Drops the session and sends the user back to sign-in with a reason shown.
   Future<void> expireSession() =>
       signOut(notice: 'Your session expired. Please sign in again.');
+
+  /// Runs one account operation with the shared busy flag (so a second click
+  /// cannot queue a duplicate) and turns failures into a message. Returns
+  /// null on success, otherwise the message to show.
+  Future<String?> _attempt(
+    Future<void> Function() op,
+    String fallback,
+  ) async {
+    if (_busy) return 'Please wait for the current request to finish.';
+    _busy = true;
+    notifyListeners();
+    try {
+      await op();
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (_) {
+      return fallback;
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
+  /// Null when the workspace exists, otherwise why it cannot be used.
+  Future<String?> checkWorkspace(String slug) async {
+    var exists = false;
+    final error = await _attempt(
+      () async => exists = await _backend.workspaceExists(slug),
+      "We couldn't check that workspace. Please try again.",
+    );
+    return error ??
+        (exists ? null : "We couldn't find a workspace called \"$slug\".");
+  }
+
+  /// The workspace for [email]: `(slug, null)` or `(null, message)`.
+  Future<(String?, String?)> findWorkspace(String email) async {
+    String? slug;
+    final error = await _attempt(
+      () async => slug = await _backend.findWorkspace(email),
+      "We couldn't look up your workspace. Please try again.",
+    );
+    if (error != null) return (null, error);
+    return slug == null
+        ? (null, 'No workspace is linked to that email address.')
+        : (slug, null);
+  }
+
+  Future<String?> changePassword(String current, String next) {
+    final email = _user?.email;
+    if (email == null) return Future.value('Your session has expired.');
+    return _attempt(
+      () => _backend.changePassword(email, current, next),
+      "We couldn't change your password. Please try again.",
+    );
+  }
+
+  Future<String?> requestPasswordReset(String email) => _attempt(
+        () => _backend.requestPasswordReset(email),
+        "We couldn't start the reset. Please try again.",
+      );
+
+  Future<String?> resetPassword(String email, String code, String next) =>
+      _attempt(
+        () => _backend.resetPassword(email, code, next),
+        "We couldn't reset your password. Please try again.",
+      );
+
+  /// Deactivates the signed-in account, then signs out.
+  Future<String?> deactivateAccount() async {
+    final email = _user?.email;
+    if (email == null) return 'Your session has expired.';
+    final error = await _attempt(
+      () => _backend.deactivateAccount(email),
+      "We couldn't deactivate your account. Please try again.",
+    );
+    if (error == null) {
+      await signOut(notice: 'Your account has been deactivated.');
+    }
+    return error;
+  }
+
+  /// Deletes the signed-in account, then signs out.
+  Future<String?> deleteAccount() async {
+    final email = _user?.email;
+    if (email == null) return 'Your session has expired.';
+    final error = await _attempt(
+      () => _backend.deleteAccount(email),
+      "We couldn't delete your account. Please try again.",
+    );
+    if (error == null) {
+      await signOut(notice: 'Your account has been deleted.');
+    }
+    return error;
+  }
 }

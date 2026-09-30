@@ -47,5 +47,7 @@ final List<MenuItemModel> kMenuItems = [
 ];
 
 /// Items under one heading, in declaration order.
-List<MenuItemModel> menuItemsFor(SidebarGroup group) =>
-    [for (final i in kMenuItems) if (i.group == group) i];
+List<MenuItemModel> menuItemsFor(SidebarGroup group) => [
+      for (final i in kMenuItems)
+        if (i.group == group) i
+    ];

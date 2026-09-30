@@ -32,26 +32,31 @@ class LoginOtpField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The label row is the cheapest height to give back on a short viewport:
+    // the demo banner and the six boxes directly below already say what the
+    // field is.
+    final shortViewport = MediaQuery.sizeOf(context).height < 760;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            const Icon(Icons.shield_outlined, size: 18, color: kMuted),
-            const SizedBox(width: 8),
-            const Flexible(
-              child: Text(
-                'One-time password',
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: kInk,
+        if (!shortViewport)
+          const Row(
+            children: [
+              Icon(Icons.shield_outlined, size: 16, color: kMutedStrong),
+              SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'One-time password',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: kInk,
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         // Demo affordance only: a real backend never returns the code, so this
         // whole block disappears the moment one is wired in. It is deliberately
         // prominent — there is no mail/SMS service here, and a hint small
@@ -88,20 +93,20 @@ class _DemoCodeBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEF3C7),
+        color: semanticTint(kWarning),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFFCD34D)),
+        border: Border.all(color: kWarning.withValues(alpha: .35)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline, size: 16, color: Color(0xFF92400E)),
+          const Icon(Icons.info_outline, size: 16, color: kWarning),
           const SizedBox(width: 8),
           const Text(
             'Demo code:',
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF92400E),
+              color: kWarning,
             ),
           ),
           const SizedBox(width: 8),
@@ -114,7 +119,7 @@ class _DemoCodeBanner extends StatelessWidget {
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 3,
-                color: Color(0xFF7C2D12),
+                color: kInkStrong,
               ),
             ),
           ),

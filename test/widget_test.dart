@@ -7,6 +7,10 @@ void main() {
     await tester.pumpWidget(const StacklyApp());
     // Let the staggered entrance animations finish.
     await tester.pumpAndSettle();
-    expect(find.text('Welcome Back'), findsOneWidget);
+    // The 800x600 test surface is narrow, so login opens on the brand splash.
+    expect(find.text('SIGN IN'), findsOneWidget);
+    await tester.tap(find.text('SIGN IN'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sign in'), findsOneWidget);
   });
 }

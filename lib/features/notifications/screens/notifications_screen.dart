@@ -148,7 +148,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     icon: const Icon(Icons.delete_sweep_outlined, size: 18),
                     label: const Text('Clear all'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFDC2626),
+                      foregroundColor: kDanger,
                       side: const BorderSide(color: kBorder),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -264,7 +264,7 @@ class _FilterTab extends StatelessWidget {
       selected: selected,
       button: true,
       child: Material(
-        color: selected ? kIndigo.withValues(alpha: .10) : Colors.white,
+        color: selected ? kIndigo.withValues(alpha: .10) : kSurface,
         borderRadius: BorderRadius.circular(999),
         child: InkWell(
           onTap: onTap,
@@ -372,8 +372,7 @@ class _NotificationRow extends StatelessWidget {
                         StatusPill(label: item.kind.label, color: kMuted),
                         Text(
                           relativeTime(item.at, now),
-                          style:
-                              const TextStyle(fontSize: 11.5, color: kMuted),
+                          style: const TextStyle(fontSize: 11.5, color: kMuted),
                         ),
                       ],
                     ),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stackly_auth/auth.dart';
+import 'package:stackly_auth/features/auth/screens/login/widgets/login_form.dart';
 import 'package:stackly_auth/providers/auth_provider.dart';
 
 import 'test_app.dart';
@@ -52,11 +53,19 @@ void main() {
       unawaited(auth.verify('000000'));
       await step(tester);
 
-      final scrollView = find.byType(SingleChildScrollView).first;
+      // The form card's own scroll view, not the hero panel's: the hero
+      // carries a product screenshot and is allowed to scroll, the sign-in
+      // controls are not.
+      final scrollView = find.ancestor(
+        of: find.byType(LoginForm),
+        matching: find.byType(SingleChildScrollView),
+      );
       final viewport = tester.renderObject<RenderBox>(scrollView).size.height;
       final content = tester
           .renderObject<RenderBox>(
-            find.descendant(of: scrollView, matching: find.byType(Column)).first,
+            find
+                .descendant(of: scrollView, matching: find.byType(Column))
+                .first,
           )
           .size
           .height;
@@ -64,15 +73,16 @@ void main() {
       expect(
         content,
         lessThanOrEqualTo(viewport),
-        reason: 'the login form needs ${(content - viewport).toStringAsFixed(0)}px '
+        reason:
+            'the login form needs ${(content - viewport).toStringAsFixed(0)}px '
             'more than the $label viewport, so the user has to scroll to reach '
-            'the Sign In button',
+            'the Login button',
       );
       expect(tester.takeException(), isNull);
     });
   }
 
-  testWidgets('the Sign In button is reachable without scrolling at 1366x768',
+  testWidgets('the Verify button is reachable without scrolling at 1366x768',
       (tester) async {
     final auth = AuthProvider(DemoAuthBackend(latency: Duration.zero));
     addTearDown(auth.dispose);
@@ -87,10 +97,10 @@ void main() {
 
     // The measurement above proves the column fits; this proves the control
     // the user actually needs is inside the visible viewport.
-    final button = find.widgetWithText(InkWell, 'Sign In');
+    final button = find.widgetWithText(InkWell, 'Verify and sign in');
     expect(button, findsWidgets);
     final rect = tester.getRect(button.first);
     expect(rect.bottom, lessThanOrEqualTo(768),
-        reason: 'the Sign In button sits below the fold');
+        reason: 'the Verify button sits below the fold');
   });
 }

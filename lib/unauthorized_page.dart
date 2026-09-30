@@ -31,7 +31,7 @@ class UnauthorizedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F0FB),
+      backgroundColor: kCanvas,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -42,7 +42,7 @@ class UnauthorizedPage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: kSurface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: kBorder),
                   ),
@@ -53,12 +53,12 @@ class UnauthorizedPage extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2),
+                          color: semanticTint(kDanger),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
                           Icons.lock_outline,
-                          color: Color(0xFFDC2626),
+                          color: kDanger,
                           size: 28,
                         ),
                       ),
@@ -78,7 +78,8 @@ class UnauthorizedPage extends StatelessWidget {
                       const Text(
                         'Your account does not have permission to open this '
                         'page. Ask a platform administrator if you need access.',
-                        style: TextStyle(fontSize: 14, color: kMuted, height: 1.5),
+                        style:
+                            TextStyle(fontSize: 14, color: kMuted, height: 1.5),
                       ),
                       const SizedBox(height: 16),
                       _DetailRow(label: 'Page', value: path),
@@ -129,7 +130,7 @@ class _DetailRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: kInset,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: kBorder),
       ),

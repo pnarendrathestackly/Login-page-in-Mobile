@@ -50,13 +50,14 @@ void main() {
     expect(auth.error, isNotNull);
   });
 
-  test('demoCode mirrors the outstanding code and clears when consumed',
-      () async {
-    expect(auth.demoCode, isNull);
+  test('demoCode is available up front and clears once signed in', () async {
+    // Shown before the password step too: the login form asks for the code in
+    // the same submit, so a hint that only appears afterwards comes too late.
+    expect(auth.demoCode, DemoAuthBackend.demoCode);
     await auth.signIn('me@stackly.com', 'password123');
     expect(auth.demoCode, code);
     await auth.verify(code!);
-    // Consumed: nothing left to show.
+    // Signed in: nothing left to prompt for.
     expect(auth.demoCode, isNull);
   });
 

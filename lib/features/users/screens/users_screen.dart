@@ -105,7 +105,12 @@ class _UsersPageState extends State<UsersPage>
       page = 0;
     });
     if (mounted) {
-      showToast(context, 'Invitation sent to ${values['Email address']}.');
+      // No email service exists, so nothing is sent; say what did happen.
+      showToast(
+        context,
+        '${values['Full name']} added as a pending user. Invitation emails '
+        "aren't connected yet.",
+      );
     }
   }
 
@@ -184,9 +189,8 @@ class _UsersPageState extends State<UsersPage>
               email: row.email,
               role: row.role,
               department: row.department,
-              status: deactivating
-                  ? AccountStatus.inactive
-                  : AccountStatus.active,
+              status:
+                  deactivating ? AccountStatus.inactive : AccountStatus.active,
               lastActive: row.lastActive,
               joined: row.joined,
             )
@@ -493,7 +497,7 @@ class _UserCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFE),
+        color: kInset,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: kBorder),
       ),

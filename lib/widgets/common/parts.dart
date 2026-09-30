@@ -23,7 +23,7 @@ class Panel extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: kSurface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: kBorder),
       ),
@@ -167,8 +167,8 @@ class _SkeletonState extends State<Skeleton>
           height: widget.height,
           decoration: BoxDecoration(
             color: Color.lerp(
-              const Color(0xFFEDEDF5),
-              const Color(0xFFDCDCEA),
+              kTrack,
+              kSurfaceSecondary,
               _c.value,
             ),
             borderRadius: BorderRadius.circular(widget.radius),
@@ -229,42 +229,44 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
-      child: Column(
-        children: [
-          Icon(icon, size: 30, color: kMuted),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: kInk,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: kMuted),
-          ),
-          if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: 14),
-            OutlinedButton(
-              onPressed: onAction,
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: kBorder),
-                foregroundColor: kIndigo,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+    return FadeIn(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+        child: Column(
+          children: [
+            Icon(icon, size: 30, color: kMuted),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: kInk,
               ),
-              child: Text(actionLabel!),
             ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: kMuted),
+            ),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 14),
+              OutlinedButton(
+                onPressed: onAction,
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: kBorder),
+                  foregroundColor: kIndigo,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(actionLabel!),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -284,7 +286,7 @@ class ErrorState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       child: Column(
         children: [
-          const Icon(Icons.error_outline, size: 28, color: Color(0xFFDC2626)),
+          const Icon(Icons.error_outline, size: 28, color: kDanger),
           const SizedBox(height: 10),
           Text(
             message,

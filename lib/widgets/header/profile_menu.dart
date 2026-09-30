@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../auth.dart';
 import '../../dashboard.dart';
 import '../../main.dart';
+import '../../motion.dart';
+import '../sidebar/app_sidebar.dart';
 
 class ProfileMenu extends StatelessWidget {
   const ProfileMenu({
@@ -22,45 +24,53 @@ class ProfileMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return MenuAnchor(
       style: const MenuStyle(
-        backgroundColor: WidgetStatePropertyAll(Colors.white),
+        backgroundColor: WidgetStatePropertyAll(kSurfaceElevated),
       ),
+      // MenuAnchor opens without animation; stagger the rows in instead.
       menuChildren: [
-        ProfileMenuItem(
-          icon: Icons.person_outline,
-          label: 'My Profile',
-          onTap: () => onNavigate?.call(DashboardSection.profile),
-        ),
-        ProfileMenuItem(
-          icon: Icons.settings_outlined,
-          label: 'Account Settings',
-          onTap: () => onNavigate?.call(DashboardSection.settings),
-        ),
-        ProfileMenuItem(
-          icon: Icons.help_outline,
-          label: 'Help & Support',
-          onTap: () => onNavigate?.call(DashboardSection.help),
-        ),
-        const Divider(color: kBorder, height: 1),
-        // Runs the same handler as every other sign-out in the app.
-        ProfileMenuItem(
-          icon: Icons.logout,
-          label: 'Sign Out',
-          onTap: () => controller.signOut(),
-        ),
+        for (final (i, item) in [
+          ProfileMenuItem(
+            icon: Icons.person_outline,
+            label: 'My Profile',
+            onTap: () => onNavigate?.call(DashboardSection.profile),
+          ),
+          ProfileMenuItem(
+            icon: Icons.settings_outlined,
+            label: 'Account Settings',
+            onTap: () => onNavigate?.call(DashboardSection.settings),
+          ),
+          ProfileMenuItem(
+            icon: Icons.help_outline,
+            label: 'Help & Support',
+            onTap: () => onNavigate?.call(DashboardSection.help),
+          ),
+          const Divider(color: kBorder, height: 1),
+          // Runs the same handler as every other sign-out in the app.
+          ProfileMenuItem(
+            icon: Icons.logout,
+            label: 'Sign Out',
+            onTap: () => controller.signOut(),
+          ),
+        ].indexed)
+          FadeIn(delay: Motion.stagger * i, offset: -4, child: item),
       ],
       builder: (context, menu, _) => InkWell(
         onTap: () => menu.isOpen ? menu.close() : menu.open(),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(22),
+        customBorder: const StadiumBorder(),
         child: Semantics(
           button: true,
           label: 'Account menu for ${user.name}',
           excludeSemantics: true,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(6, 5, 12, 5),
+            decoration: ShapeDecoration(
+              shape: StadiumBorder(side: BorderSide(color: kBorder)),
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                UserAvatar(user: user),
+                RailAvatar(size: 30, email: user.email),
                 if (!compact) ...[
                   const SizedBox(width: 10),
                   ConstrainedBox(
@@ -81,13 +91,14 @@ class ProfileMenu extends StatelessWidget {
                         Text(
                           user.role,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12, color: kMuted),
+                          style: const TextStyle(fontSize: 11.5, color: kMuted),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 10),
                 ],
-                const Icon(Icons.expand_more, size: 18, color: kMuted),
+                const Icon(Icons.expand_more, size: 18, color: kInk),
               ],
             ),
           ),
@@ -117,35 +128,6 @@ class ProfileMenuItem extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(fontSize: 14, color: kInk),
-      ),
-    );
-  }
-}
-
-class UserAvatar extends StatelessWidget {
-  const UserAvatar({
-    super.key,required this.user});
-  final AuthUser user;
-
-  @override
-  Widget build(BuildContext context) {
-    final initials = user.name
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((w) => w.isNotEmpty)
-        .take(2)
-        .map((w) => w[0].toUpperCase())
-        .join();
-    return CircleAvatar(
-      radius: 16,
-      backgroundColor: kIndigo.withValues(alpha: .12),
-      child: Text(
-        initials,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: kIndigo,
-        ),
       ),
     );
   }

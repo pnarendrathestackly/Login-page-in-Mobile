@@ -22,23 +22,39 @@ void main() {
     expect(auth.status, AuthStatus.authenticated);
   });
 
-  test('a first submit with no code yet reports it and issues one', () async {
+  test('a first submit with the correct demo code authenticates in one go',
+      () async {
     String? code;
     final auth = AuthProvider(
       DemoAuthBackend(onCodeSent: (c) => code = c, latency: Duration.zero),
     );
-    // Cold start: the user has never received a code.
+    // Cold start: the user has never received a code, but the demo code is
+    // fixed, so a code typed ahead of time is still the right one — this must
+    // not be thrown away and asked for again.
     await auth.signInWithCode(
       email: 'me@stackly.com',
       password: 'password123',
       code: '123456',
     );
-    // A code now exists and the user is told to enter it. Asserting the
-    // behaviour rather than the exact sentence: the wording must NOT claim the
-    // code was mailed anywhere, because nothing sends it.
+    expect(code, isNotNull);
+    expect(auth.error, isNull);
+    expect(auth.status, AuthStatus.authenticated);
+  });
+
+  test('a first submit with the wrong code reports it and issues one',
+      () async {
+    String? code;
+    final auth = AuthProvider(
+      DemoAuthBackend(onCodeSent: (c) => code = c, latency: Duration.zero),
+    );
+    await auth.signInWithCode(
+      email: 'me@stackly.com',
+      password: 'password123',
+      code: '000000',
+    );
     expect(code, isNotNull);
     expect(auth.error, isNotNull);
-    expect(auth.error, isNot(contains('sent')));
-    expect(auth.status, AuthStatus.awaitingVerification);
+    // A bad code does not leave a half-finished session hanging around.
+    expect(auth.status, AuthStatus.unauthenticated);
   });
 }

@@ -26,6 +26,11 @@ abstract final class Motion {
   /// Gap between staggered siblings.
   static const stagger = Duration(milliseconds: 60);
 
+  /// Endless decorative loops (the login hub diagram). Tests switch this off
+  /// in test/flutter_test_config.dart, since a loop never lets
+  /// pumpAndSettle settle.
+  static bool ambient = true;
+
   /// True when the OS asks for reduced motion. Every animated widget below
   /// checks this and renders the final state directly instead of animating.
   static bool reduced(BuildContext context) =>
@@ -62,9 +67,19 @@ class FadeIn extends StatefulWidget {
 }
 
 class _FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
+  // The delay is folded into the controller (see the Interval below) rather
+  // than a timer, so nothing is left pending if the widget is disposed early.
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: widget.duration,
+    duration: widget.delay + widget.duration,
+  );
+  late final _curved = CurvedAnimation(
+    parent: _c,
+    curve: Interval(
+      widget.delay.inMicroseconds / _c.duration!.inMicroseconds,
+      1,
+      curve: Motion.enter,
+    ),
   );
   bool _started = false;
 
@@ -75,24 +90,21 @@ class _FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
     _started = true;
     if (Motion.reduced(context)) {
       _c.value = 1;
-    } else if (widget.delay == Duration.zero) {
-      _c.forward();
     } else {
-      Future.delayed(widget.delay, () {
-        if (mounted) _c.forward();
-      });
+      _c.forward();
     }
   }
 
   @override
   void dispose() {
+    _curved.dispose();
     _c.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final curved = CurvedAnimation(parent: _c, curve: Motion.enter);
+    final curved = _curved;
     return FadeTransition(
       opacity: curved,
       child: AnimatedBuilder(

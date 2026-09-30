@@ -143,7 +143,7 @@ void main() {
   testWidgets('an unauthenticated app starts on login', (tester) async {
     final (_, app) = await boot(tester);
     expect(app.router.location, AppRoutes.login);
-    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
   });
 
   testWidgets('a deep link into a protected route lands on login',
@@ -153,10 +153,11 @@ void main() {
     await step(tester);
 
     expect(app.router.location, AppRoutes.login);
-    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
   });
 
-  testWidgets('signing in routes to the dashboard, and back to login on '
+  testWidgets(
+      'signing in routes to the dashboard, and back to login on '
       'sign out', (tester) async {
     String? code;
     final auth = AuthProvider(
@@ -184,7 +185,7 @@ void main() {
     unawaited(auth.signOut());
     await step(tester);
     expect(app.router.location, AppRoutes.login);
-    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
   });
 
   testWidgets('sidebar navigation drives the URL', (tester) async {
@@ -202,9 +203,9 @@ void main() {
     await step(tester);
     final app = tester.state<TestAppState>(find.byType(TestApp));
 
-    await tester.tap(find.text('Customers').first);
+    await tester.tap(find.text('User Management').first);
     await step(tester);
-    expect(app.router.location, AppRoutes.customers);
+    expect(app.router.location, '/admin/users');
 
     await tester.tap(find.text('Settings').first);
     await step(tester);
@@ -255,12 +256,15 @@ void main() {
   testWidgets('sign-up stacks over login and pops back to it', (tester) async {
     final (_, app) = await boot(tester);
 
-    await tester.tap(find.text('Sign up'));
+    await tester.tap(find.text('Talk to sales'));
     await step(tester);
     expect(app.router.location, AppRoutes.register);
-    expect(find.text('Create Your Account'), findsOneWidget);
+    expect(find.text('Tell us about your organization'), findsOneWidget);
 
-    await tester.tap(find.text('Login').last);
+    // Step 1 is long: the footer link sits below the fold.
+    await tester.ensureVisible(find.text('Sign in').last);
+    await step(tester);
+    await tester.tap(find.text('Sign in').last);
     await step(tester);
     expect(app.router.location, AppRoutes.login);
   });

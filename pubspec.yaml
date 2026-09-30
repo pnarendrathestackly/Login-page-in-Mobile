@@ -7,6 +7,7 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
+  file_picker: ^13.1.0
   flutter:
     sdk: flutter
   provider: ^6.1.2
@@ -20,7 +21,25 @@ flutter:
   uses-material-design: true
   assets:
     - assets/Loginpage.jpeg
-    - assets/signup_art.jpg
+    - assets/stackly_logo.png
+    - assets/signup_art.jpeg
     - assets/google logo.png
     - assets/github logo.png
     - assets/Microsoft-logo .png
+    # Per-module sidebar logos, keyed by module id in core/platform/modules.dart.
+    - assets/platform_Administration_Service.png
+    - assets/HRMS Service.png
+    - assets/CRM Service.png
+    - assets/ERP Service.png
+    - assets/Finance & Accounting Service.png
+    - assets/Workflow & Automation service.png
+    - assets/Document Management service.png
+    - assets/subscription service .png
+    - assets/Revenue Service .png
+    - assets/Reporting & BI service .png
+    - assets/Enterprise AI service.png
+    - assets/Notification service .png
+    - assets/calendar service.png
+    - assets/integration service.png
+    - assets/search service.png
+    - assets/security & compliances service.png

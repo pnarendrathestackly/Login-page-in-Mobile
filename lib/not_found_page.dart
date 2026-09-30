@@ -19,7 +19,7 @@ class NotFoundPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F0FB),
+      backgroundColor: kCanvas,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -30,7 +30,7 @@ class NotFoundPage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: kSurface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: kBorder),
                   ),

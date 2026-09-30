@@ -61,7 +61,7 @@ class _SearchBoxState extends State<SearchBox> {
                   },
                 ),
           filled: true,
-          fillColor: const Color(0xFFF7F7FC),
+          fillColor: kFieldFill,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
           border: _border(kBorder),
           enabledBorder: _border(kBorder),
@@ -104,7 +104,7 @@ class FilterDropdown<T> extends StatelessWidget {
       // are otherwise wide enough to overflow a phone-width toolbar.
       constraints: const BoxConstraints(maxWidth: 220),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7FC),
+        color: kFieldFill,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: value == null ? kBorder : kIndigo),
       ),
@@ -429,7 +429,7 @@ class RowActions extends StatelessWidget {
         )),
         MenuAnchor(
           style: const MenuStyle(
-            backgroundColor: WidgetStatePropertyAll(Colors.white),
+            backgroundColor: WidgetStatePropertyAll(kSurfaceElevated),
           ),
           menuChildren: [
             for (final e in extra)
@@ -443,11 +443,11 @@ class RowActions extends StatelessWidget {
               leadingIcon: const Icon(
                 Icons.delete_outline,
                 size: 18,
-                color: Color(0xFFDC2626),
+                color: kDanger,
               ),
               child: const Text(
                 'Delete',
-                style: TextStyle(fontSize: 14, color: Color(0xFFDC2626)),
+                style: TextStyle(fontSize: 14, color: kDanger),
               ),
             ),
           ],

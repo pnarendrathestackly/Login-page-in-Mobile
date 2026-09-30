@@ -238,7 +238,8 @@ void main() {
 
   group('tenant scoping', () {
     test('permissions are empty until fully authenticated', () {
-      final controller = AuthController(DemoAuthBackend(latency: Duration.zero));
+      final controller =
+          AuthController(DemoAuthBackend(latency: Duration.zero));
       addTearDown(controller.dispose);
 
       expect(controller.permissions.isEmpty, isTrue);

@@ -9,6 +9,7 @@ import '../../dashboard/models/dashboard_models.dart';
 import '../../../widgets/common/parts.dart';
 import '../../../widgets/common/sections.dart';
 import '../../../widgets/common/directory_skeleton.dart';
+import '../../../widgets/common/file_export.dart';
 
 /// Business intelligence: KPI strip, report controls, and seven analytics
 /// panels built from the existing chart widgets.
@@ -51,12 +52,40 @@ class _ReportsPageState extends State<ReportsPage> {
     'Halcyon Energy',
   ];
 
+  /// Exports the figures this page is showing.
   void _export() {
-    // ponytail: no export endpoint exists. Say so rather than downloading an
-    // empty file — wire this to the reporting service when it lands.
-    showToast(
+    final d = widget.data;
+    if (d == null) {
+      showToast(context, 'The report is still loading.', isError: true);
+      return;
+    }
+    exportCsv(
       context,
-      'Report export is not connected to a backend yet.',
+      fileName: 'report.csv',
+      csv: csvOf([
+        'section',
+        'label',
+        'value'
+      ], [
+        for (final k in d.kpis) ['KPI', k.label, k.value],
+        for (var i = 0; i < d.revenue.labels.length; i++)
+          ['Revenue', d.revenue.labels[i], d.revenue.values[i]],
+        for (var i = 0; i < d.customerGrowth.labels.length; i++)
+          [
+            'Customer growth',
+            d.customerGrowth.labels[i],
+            d.customerGrowth.values[i]
+          ],
+        for (final t in d.taskCompletion)
+          ['Tasks', t.label, '${t.active} done / ${t.inactive} open'],
+        for (final p in d.teamProductivity)
+          [
+            'Team',
+            p.name,
+            '${p.delivered} delivered, '
+                '${(p.utilisation * 100).round()}% utilised'
+          ],
+      ]),
     );
   }
 
@@ -305,7 +334,8 @@ class _ReportsPageState extends State<ReportsPage> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Expanded(child: ProgressBar(value: member.utilisation)),
+                          Expanded(
+                              child: ProgressBar(value: member.utilisation)),
                           const SizedBox(width: 10),
                           SizedBox(
                             width: 62,

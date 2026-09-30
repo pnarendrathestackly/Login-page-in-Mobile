@@ -7,8 +7,8 @@ import './charts.dart';
 import '../../features/dashboard/models/dashboard_models.dart';
 import './parts.dart';
 
-const _positive = Color(0xFF059669);
-const _negative = Color(0xFFDC2626);
+const _positive = kSuccess;
+const _negative = kDanger;
 
 /// "Welcome back, Vishnu" plus who and when. Everything here comes from the
 /// authenticated session — nothing is hardcoded.
@@ -66,7 +66,7 @@ class _Meta extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: kSurfaceElevated,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: kBorder),
       ),
@@ -103,77 +103,80 @@ class KpiCard extends StatelessWidget {
               '${change >= 0 ? 'up' : 'down'} '
               '${change.abs().toStringAsFixed(1)} percent. ${kpi.caption}',
       excludeSemantics: true,
-      child: Panel(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: kIndigo.withValues(alpha: .10),
-                    borderRadius: BorderRadius.circular(10),
+      child: HoverLift(
+        borderRadius: BorderRadius.circular(16),
+        child: Panel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: kIndigo.withValues(alpha: .10),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(kpi.icon, size: 18, color: kIndigo),
                   ),
-                  child: Icon(kpi.icon, size: 18, color: kIndigo),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    kpi.label.toUpperCase(),
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: .8,
-                      color: kMuted,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      kpi.label.toUpperCase(),
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .8,
+                        color: kMuted,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Text(
-              kpi.value,
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                color: kInk,
-                height: 1.1,
+                ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                if (change != null) ...[
-                  Icon(
-                    kpi.trend == Trend.up
-                        ? Icons.arrow_upward
-                        : Icons.arrow_downward,
-                    size: 14,
-                    color: color,
-                  ),
-                  const SizedBox(width: 2),
-                  Text(
-                    '${change.abs().toStringAsFixed(1)}%',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
+              const SizedBox(height: 14),
+              Text(
+                kpi.value,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: kInk,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  if (change != null) ...[
+                    Icon(
+                      kpi.trend == Trend.up
+                          ? Icons.arrow_upward
+                          : Icons.arrow_downward,
+                      size: 14,
                       color: color,
                     ),
+                    const SizedBox(width: 2),
+                    Text(
+                      '${change.abs().toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    child: Text(
+                      kpi.caption,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12.5, color: kMuted),
+                    ),
                   ),
-                  const SizedBox(width: 8),
                 ],
-                Expanded(
-                  child: Text(
-                    kpi.caption,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12.5, color: kMuted),
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -308,7 +311,8 @@ class UserActivityPanel extends StatelessWidget {
             const EmptyState(
               icon: Icons.insights_outlined,
               title: 'No activity yet',
-              message: 'User activity appears here once people start signing in.',
+              message:
+                  'User activity appears here once people start signing in.',
             )
           else ...[
             UserActivityChart(buckets: buckets),
@@ -377,7 +381,8 @@ class ProjectStatusPanel extends StatelessWidget {
 }
 
 class RecentActivityPanel extends StatelessWidget {
-  const RecentActivityPanel({super.key, required this.items, required this.now});
+  const RecentActivityPanel(
+      {super.key, required this.items, required this.now});
 
   final List<Activity> items;
   final DateTime now;
@@ -486,7 +491,8 @@ class ProjectTable extends StatelessWidget {
                   ? _wideTable(context)
                   : Column(
                       children: [
-                        for (final p in projects) _ProjectCard(p, onView: onView),
+                        for (final p in projects)
+                          _ProjectCard(p, onView: onView),
                       ],
                     ),
             ),
@@ -591,7 +597,7 @@ class _ProjectCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFE),
+        color: kInset,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: kBorder),
       ),
@@ -691,11 +697,17 @@ class ProgressBar extends StatelessWidget {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                value: value.clamp(0, 1),
-                minHeight: 6,
-                backgroundColor: const Color(0xFFEDEDF5),
-                valueColor: const AlwaysStoppedAnimation(kIndigo),
+              // Fills from empty on first show, then eases between values.
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: value.clamp(0, 1).toDouble()),
+                duration: Motion.duration(context, Motion.complex),
+                curve: Motion.standardCurve,
+                builder: (_, v, __) => LinearProgressIndicator(
+                  value: v,
+                  minHeight: 6,
+                  backgroundColor: kTrack,
+                  valueColor: const AlwaysStoppedAnimation(kIndigo),
+                ),
               ),
             ),
           ),
@@ -773,7 +785,7 @@ class _Tally extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFE),
+        color: kInset,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: kBorder),
       ),
@@ -804,7 +816,7 @@ class _TaskRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFE),
+        color: kInset,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: kBorder),
       ),
@@ -834,7 +846,8 @@ class _TaskRow extends StatelessWidget {
             runSpacing: 6,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              StatusPill(label: task.priority.label, color: task.priority.color),
+              StatusPill(
+                  label: task.priority.label, color: task.priority.color),
               Text(
                 task.project,
                 style: const TextStyle(fontSize: 12.5, color: kMuted),
@@ -1070,8 +1083,7 @@ class UpcomingPanel extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             '${item.kind.label} · ${item.context}',
-                            style:
-                                const TextStyle(fontSize: 12, color: kMuted),
+                            style: const TextStyle(fontSize: 12, color: kMuted),
                           ),
                         ],
                       ),

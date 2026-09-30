@@ -54,7 +54,13 @@ void main() {
       await tester.pumpWidget(TestApp(auth: auth));
       await step(tester);
 
-      expect(find.text('Welcome Back'), findsOneWidget);
+      // Narrow windows open on the brand splash, wide ones on the form.
+      if (entry.value.width < 900) {
+        expect(find.text('SIGN IN'), findsOneWidget);
+        await tester.tap(find.text('SIGN IN'));
+        await step(tester);
+      }
+      expect(find.text('Sign in'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
@@ -76,12 +82,10 @@ void main() {
       unawaited(auth.verify(code!));
       await step(tester);
 
-      // Below 900px the sidebar is a drawer and must be opened first.
-      if (entry.value.width < 900) {
-        await tester.tap(find.byTooltip('Open navigation menu'));
-        await tester.pumpAndSettle();
-      }
-      await tester.tap(find.text('Profile').last);
+      // Profile lives in the header's account menu.
+      await tester.tap(find.bySemanticsLabel(RegExp('Account menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('My Profile'));
       await tester.pumpAndSettle();
 
       expect(find.text('Your account and workspace details.'), findsOneWidget);
@@ -112,6 +116,14 @@ void main() {
     await step(tester);
     await step(tester);
     // Sidebar nav is now reachable from the drawer.
-    expect(find.text('Profile'), findsWidgets);
+    expect(find.text('Log out'), findsOneWidget);
+    expect(find.text('Platform Configuration'), findsOneWidget);
+
+    // The drawer closes on its own X, not just the scrim.
+    await tester.tap(find.byTooltip('Close menu'));
+    await step(tester);
+    await step(tester);
+    expect(find.text('Platform Configuration'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 }

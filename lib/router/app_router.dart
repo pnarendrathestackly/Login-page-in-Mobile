@@ -9,6 +9,7 @@ import '../features/auth/screens/login/login_screen.dart';
 import '../motion.dart';
 import '../not_found_page.dart';
 import '../providers/navigation_provider.dart';
+import '../features/auth/screens/forgot_password_screen.dart';
 import '../signup_page.dart';
 import '../unauthorized_page.dart';
 
@@ -336,8 +337,8 @@ class AppRouter extends RouterDelegate<AppRoute>
   }
 
   void _onAuthChanged() {
-    final next = applyGuards(_location, auth.status,
-        permissions: auth.permissions);
+    final next =
+        applyGuards(_location, auth.status, permissions: auth.permissions);
     if (next != _location) {
       _location = next;
       _syncNavigation();
@@ -350,8 +351,7 @@ class AppRouter extends RouterDelegate<AppRoute>
 
   /// Navigate to a named route. The single entry point for app navigation.
   void go(String path) {
-    final next =
-        applyGuards(path, auth.status, permissions: auth.permissions);
+    final next = applyGuards(path, auth.status, permissions: auth.permissions);
     _attempted = next == AppRoutes.notFound || next == AppRoutes.unauthorized
         ? _stripQuery(path)
         : null;
@@ -471,14 +471,22 @@ class AppRouter extends RouterDelegate<AppRoute>
             child: SignUpPage(controller: auth),
           ),
         ],
+      AppRoutes.forgotPassword => [
+          _FadePage(
+            name: AppRoutes.forgotPassword,
+            key: const ValueKey('forgot-password'),
+            builder: (_) => const ForgotPasswordScreen(),
+          ),
+        ],
       AppRoutes.unauthorized => [
           _FadePage(
             name: AppRoutes.unauthorized,
             key: const ValueKey('unauthorized'),
             builder: (_) => UnauthorizedPage(
               path: _attempted ?? '',
-              requiredPermission:
-                  _attempted == null ? null : _resolve(_attempted!).requiredPermission,
+              requiredPermission: _attempted == null
+                  ? null
+                  : _resolve(_attempted!).requiredPermission,
               onHome: () => go(homePathFor(auth.permissions)),
             ),
           ),
@@ -604,8 +612,7 @@ class AppRouteParser extends RouteInformationParser<AppRoute> {
 /// Lets any widget navigate without reaching for a Navigator:
 /// `context.go(AppRoutes.settings)`.
 extension AppNavigation on BuildContext {
-  AppRouter get router =>
-      (Router.of(this).routerDelegate as AppRouter);
+  AppRouter get router => (Router.of(this).routerDelegate as AppRouter);
 
   void go(String path) => router.go(path);
 }

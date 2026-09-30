@@ -18,8 +18,7 @@ void main() {
     }
   }
 
-  testWidgets('the demo code is shown on screen after the password step',
-      (tester) async {
+  testWidgets('the demo code is shown on the verify step', (tester) async {
     String? code;
     final auth = AuthProvider(
       DemoAuthBackend(onCodeSent: (c) => code = c, latency: Duration.zero),
@@ -32,13 +31,10 @@ void main() {
     await tester.pumpWidget(TestApp(auth: auth));
     await step(tester);
 
-    // No code exists until the password is submitted, so nothing is shown.
-    expect(find.text('Demo code:'), findsNothing);
-
     unawaited(auth.signIn('me@stackly.com', 'password123'));
     await step(tester);
 
-    // Now it is on screen, and it is the code that would actually verify.
+    // On the step that asks for it, and it is the code that would verify.
     expect(find.text('Demo code:'), findsOneWidget);
     expect(find.text(code!), findsOneWidget);
   });
@@ -52,11 +48,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(TestApp(auth: auth));
-    unawaited(auth.signInWithCode(
-      email: 'me@stackly.com',
-      password: 'password123',
-      code: '',
-    ));
+    unawaited(auth.signIn('me@stackly.com', 'password123'));
     await step(tester);
 
     // Telling the user to check an inbox nothing will ever arrive in is how

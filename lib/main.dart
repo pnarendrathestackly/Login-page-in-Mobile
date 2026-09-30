@@ -6,13 +6,14 @@ import './features/dashboard/services/dashboard_repository.dart';
 import 'providers/auth_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'router/app_router.dart';
+import 'theme/app_theme.dart';
+
+// Design tokens live in theme/app_theme.dart; re-exported whole so the ~40
+// files that `import 'main.dart'` for kIndigo/kInk/kMuted/kBorder keep working
+// and pick up the semantic/surface tokens without a per-token `show` list.
+export 'theme/app_theme.dart';
 
 void main() => runApp(const StacklyApp());
-
-const kIndigo = Color(0xFF5B4BE1);
-const kInk = Color(0xFF161329);
-const kMuted = Color(0xFF6B7280);
-const kBorder = Color(0xFFE5E7EB);
 
 /// App initialization only: providers, theme, and router setup. The route
 /// table itself lives in `router/app_router.dart`.
@@ -57,12 +58,7 @@ class _StacklyAppState extends State<StacklyApp> {
       child: MaterialApp.router(
         title: 'TheStackly',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          scaffoldBackgroundColor: const Color(0xFFF1F0FB),
-          colorScheme: ColorScheme.fromSeed(seedColor: kIndigo),
-          fontFamily: 'Roboto',
-        ),
+        theme: AppTheme.light,
         routerDelegate: _router,
         routeInformationParser: const AppRouteParser(),
       ),

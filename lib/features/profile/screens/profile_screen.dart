@@ -1,3 +1,5 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../auth.dart';
@@ -7,6 +9,7 @@ import '../../../widgets/common/data_table.dart';
 import '../../../widgets/common/dialogs.dart';
 import '../../dashboard/models/dashboard_models.dart';
 import '../../../widgets/common/parts.dart';
+import '../../../widgets/sidebar/app_sidebar.dart';
 
 /// The signed-in user's profile.
 ///
@@ -84,10 +87,47 @@ class _ProfilePageState extends State<ProfilePage> {
     if (mounted) showToast(context, 'Profile updated.');
   }
 
-  void _changePhoto() {
-    // ponytail: no upload endpoint or file picker dependency. Say so instead
-    // of opening a dialog that cannot finish.
-    showToast(context, 'Photo upload is not connected to a backend yet.');
+  static const _photoTypes = ['png', 'jpg', 'jpeg'];
+  static const _maxPhotoBytes = 5 * 1024 * 1024;
+
+  Future<void> _changePhoto() async {
+    final PlatformFile? file;
+    try {
+      file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: _photoTypes,
+      );
+    } catch (_) {
+      if (mounted) {
+        showToast(context, 'Unable to open the file picker.', isError: true);
+      }
+      return;
+    }
+    if (file == null || !mounted) return; // cancelled
+    final ext = (file.extension ?? '').toLowerCase().replaceAll('.', '');
+    if (!_photoTypes.contains(ext)) {
+      showToast(context, 'Unsupported file format. Use a PNG or JPG image.',
+          isError: true);
+      return;
+    }
+    if ((await file.length() ?? 0) > _maxPhotoBytes) {
+      if (mounted) {
+        showToast(context, 'File size exceeds the 5MB limit.', isError: true);
+      }
+      return;
+    }
+    final Uint8List bytes;
+    try {
+      bytes = await file.readAsBytes();
+    } catch (_) {
+      if (mounted) {
+        showToast(context, 'File upload failed. Please try again.',
+            isError: true);
+      }
+      return;
+    }
+    profilePhotos.value = {...profilePhotos.value, widget.user.email: bytes};
+    if (mounted) showToast(context, 'Profile photo updated.');
   }
 
   @override
@@ -130,12 +170,23 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   Stack(
                     children: [
-                      InitialsAvatar(name: user.name, radius: 34),
+                      ValueListenableBuilder(
+                        valueListenable: profilePhotos,
+                        builder: (context, photos, _) {
+                          final photo = photos[user.email];
+                          return photo == null
+                              ? InitialsAvatar(name: user.name, radius: 34)
+                              : CircleAvatar(
+                                  radius: 34,
+                                  backgroundImage: MemoryImage(photo),
+                                );
+                        },
+                      ),
                       Positioned(
                         right: 0,
                         bottom: 0,
                         child: Material(
-                          color: Colors.white,
+                          color: kSurfaceElevated,
                           shape: const CircleBorder(
                             side: BorderSide(color: kBorder),
                           ),
@@ -191,7 +242,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             const StatusPill(
                               label: 'Active',
-                              color: Color(0xFF059669),
+                              color: kSuccess,
                             ),
                           ],
                         ),
@@ -399,7 +450,7 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFE),
+        color: kInset,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: kBorder),
       ),

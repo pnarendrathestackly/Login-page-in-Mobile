@@ -14,9 +14,10 @@ class AuthProvider extends AuthController {
   /// OTP can live on the login form instead of a separate screen.
   ///
   /// The password step is only run when there is no code outstanding. The
-  /// backend issues a fresh code on every successful password check, which
-  /// would invalidate the one the user is currently typing — so once a code
-  /// has been sent, this verifies it rather than requesting another.
+  /// backend issues a fresh code on every successful password check, and the
+  /// demo code is fixed (see [DemoAuthBackend.demoCode]), so a code the user
+  /// already typed before the password check is still the right one — it is
+  /// verified immediately rather than discarded and asked for again.
   ///
   /// A failure at either step leaves the user unauthenticated on the login
   /// form with a message, never half-way into a separate verify route.
@@ -25,26 +26,10 @@ class AuthProvider extends AuthController {
     required String password,
     required String code,
   }) async {
-    // True when this submit is what triggered the code being sent, so the
-    // user cannot possibly have entered the right one yet.
-    var codeJustSent = false;
-
     if (status != AuthStatus.awaitingVerification) {
       await signIn(email, password);
       // The password was rejected; signIn already surfaced why.
       if (status != AuthStatus.awaitingVerification) return;
-      codeJustSent = true;
-    }
-
-    if (codeJustSent) {
-      // Saying "incorrect code" here would be wrong: the code they typed was
-      // never valid because the real one has only just been issued.
-      // Deliberately does not claim the code was sent anywhere: there is no
-      // mail or SMS service in this project, and telling the user to check an
-      // inbox that will never receive anything is how this flow becomes
-      // impossible to complete. A real backend should change this wording.
-      setError('Enter the 6-digit code shown below to finish signing in.');
-      return;
     }
 
     await verify(code);

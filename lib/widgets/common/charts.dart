@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../main.dart';
+import '../../motion.dart';
 import '../../features/dashboard/models/dashboard_models.dart';
 
 /// Charts drawn with CustomPainter.
@@ -12,11 +13,22 @@ import '../../features/dashboard/models/dashboard_models.dart';
 /// Reach for a library if those become requirements.
 
 /// Shared axis/label styling so all three charts read as one system.
-const _gridColor = Color(0xFFEDEDF5);
-const _labelStyle = TextStyle(fontSize: 11, color: kMuted);
+const _gridColor = kChartGrid;
+const _labelStyle = TextStyle(fontSize: 11, color: kMutedStrong);
 
-TextPainter _label(String text, {TextStyle style = _labelStyle}) =>
-    TextPainter(
+/// Draw-in progress 0..1 for a chart. Keyed on the data, so a new range or
+/// refetch replays it; under reduced motion it is 1 straight away.
+Widget _drawIn(Object data, Widget Function(double t) builder) => Builder(
+      builder: (context) => TweenAnimationBuilder<double>(
+        key: ValueKey(data),
+        tween: Tween(begin: 0, end: 1),
+        duration: Motion.duration(context, Motion.complex),
+        curve: Motion.enter,
+        builder: (_, t, __) => builder(t),
+      ),
+    );
+
+TextPainter _label(String text, {TextStyle style = _labelStyle}) => TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -40,16 +52,20 @@ class AreaChart extends StatelessWidget {
       child: SizedBox(
         height: height,
         width: double.infinity,
-        child: CustomPaint(painter: _AreaPainter(series)),
+        child: _drawIn(
+          series,
+          (t) => CustomPaint(painter: _AreaPainter(series, t)),
+        ),
       ),
     );
   }
 }
 
 class _AreaPainter extends CustomPainter {
-  _AreaPainter(this.series);
+  _AreaPainter(this.series, this.t);
 
   final PerformanceSeries series;
+  final double t;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -90,6 +106,11 @@ class _AreaPainter extends CustomPainter {
       path.lineTo(x(i), y(values[i]));
     }
 
+    // Draw-in: reveal the series left to right.
+    canvas.save();
+    canvas.clipRect(
+        Rect.fromLTRB(0, 0, plot.left + plot.width * t + 2, size.height));
+
     // Fill under the line, then the line itself on top.
     final fill = Path.from(path)
       ..lineTo(x(values.length - 1), plot.bottom)
@@ -115,6 +136,7 @@ class _AreaPainter extends CustomPainter {
         ..strokeWidth = 2
         ..strokeJoin = StrokeJoin.round,
     );
+    canvas.restore();
 
     // X labels: thin them out so they never collide on a narrow chart.
     final maxLabels = math.max(2, (plot.width / 46).floor());
@@ -132,7 +154,7 @@ class _AreaPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_AreaPainter old) => old.series != series;
+  bool shouldRepaint(_AreaPainter old) => old.series != series || old.t != t;
 }
 
 /// Grouped bars: active vs inactive users per bucket.
@@ -147,7 +169,7 @@ class UserActivityChart extends StatelessWidget {
   final double height;
 
   static const activeColor = kIndigo;
-  static const inactiveColor = Color(0xFFC7C4E8);
+  static const inactiveColor = kTrack;
 
   @override
   Widget build(BuildContext context) {
@@ -158,16 +180,20 @@ class UserActivityChart extends StatelessWidget {
       child: SizedBox(
         height: height,
         width: double.infinity,
-        child: CustomPaint(painter: _BarPainter(buckets)),
+        child: _drawIn(
+          buckets,
+          (t) => CustomPaint(painter: _BarPainter(buckets, t)),
+        ),
       ),
     );
   }
 }
 
 class _BarPainter extends CustomPainter {
-  _BarPainter(this.buckets);
+  _BarPainter(this.buckets, this.t);
 
   final List<({String label, int active, int inactive})> buckets;
+  final double t;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -199,7 +225,7 @@ class _BarPainter extends CustomPainter {
         (UserActivityChart.activeColor, b.active),
         (UserActivityChart.inactiveColor, b.inactive),
       ].indexed) {
-        final h = plot.height * (pair.$2 / maxV);
+        final h = plot.height * (pair.$2 / maxV) * t;
         final left = centre - barW - 1 + j * (barW + 2);
         canvas.drawRRect(
           RRect.fromRectAndCorners(
@@ -222,7 +248,7 @@ class _BarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_BarPainter old) => old.buckets != buckets;
+  bool shouldRepaint(_BarPainter old) => old.buckets != buckets || old.t != t;
 }
 
 /// Donut for the project status breakdown, with the total in the middle.
@@ -241,22 +267,25 @@ class DonutChart extends StatelessWidget {
       child: SizedBox(
         width: size,
         height: size,
-        child: CustomPaint(
-          painter: _DonutPainter(slices, total),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$total',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: kInk,
+        child: _drawIn(
+          slices,
+          (t) => CustomPaint(
+            painter: _DonutPainter(slices, total, t),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${(total * t).round()}',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: kInk,
+                    ),
                   ),
-                ),
-                const Text('Projects', style: _labelStyle),
-              ],
+                  const Text('Projects', style: _labelStyle),
+                ],
+              ),
             ),
           ),
         ),
@@ -266,10 +295,11 @@ class DonutChart extends StatelessWidget {
 }
 
 class _DonutPainter extends CustomPainter {
-  _DonutPainter(this.slices, this.total);
+  _DonutPainter(this.slices, this.total, this.t);
 
   final List<({ProjectStatus status, int count})> slices;
   final int total;
+  final double t;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -282,7 +312,8 @@ class _DonutPainter extends CustomPainter {
     var start = -math.pi / 2;
     for (final s in slices) {
       if (s.count <= 0) continue;
-      final sweep = s.count / total * math.pi * 2;
+      // Draw-in: the whole ring sweeps round from the top.
+      final sweep = s.count / total * math.pi * 2 * t;
       canvas.drawArc(
         rect,
         start,
@@ -301,7 +332,7 @@ class _DonutPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DonutPainter old) =>
-      old.slices != slices || old.total != total;
+      old.slices != slices || old.total != total || old.t != t;
 }
 
 /// Legend row shared by the bar and donut charts.
@@ -329,7 +360,8 @@ class ChartLegend extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              Text(e.label, style: const TextStyle(fontSize: 12, color: kMuted)),
+              Text(e.label,
+                  style: const TextStyle(fontSize: 12, color: kMuted)),
               if (e.value != null) ...[
                 const SizedBox(width: 6),
                 Text(

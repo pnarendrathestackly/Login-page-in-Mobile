@@ -7,6 +7,7 @@ import 'package:stackly_auth/dashboard.dart';
 import 'package:stackly_auth/providers/auth_provider.dart';
 import 'package:stackly_auth/providers/navigation_provider.dart';
 import 'package:stackly_auth/router/app_router.dart';
+import 'package:stackly_auth/widgets/sidebar/app_sidebar.dart';
 
 import 'test_app.dart';
 
@@ -81,18 +82,21 @@ void main() {
   testWidgets('every sidebar subheading routes to its page', (tester) async {
     final app = await signedIn(tester);
 
-    // Each destination reachable from the sidebar, driving both the URL and
-    // the highlight. Messages/Help render a placeholder but still route.
-    for (final section in DashboardSection.values) {
-      final label = find.text(section.label);
-      if (label.evaluate().isEmpty) continue;
-
-      await tester.tap(label.first);
+    // Each rail entry drives the URL.
+    const entries = {
+      'Platform Administration': '/admin/overview',
+      'Platform Configuration': '/admin/settings',
+      'License Management': '/admin/licenses',
+      'Settings': AppRoutes.settings,
+      'User Management': '/admin/users',
+      'Super Admin Dashboard': AppRoutes.dashboard,
+    };
+    for (final MapEntry(key: label, value: path) in entries.entries) {
+      await tester.tap(find
+          .descendant(of: find.byType(AppSidebar), matching: find.text(label))
+          .first);
       await step(tester);
-
-      expect(app.router.location, pathForSection(section),
-          reason: section.label);
-      expect(app.navigation.selectedSection, section, reason: section.label);
+      expect(app.router.location, path, reason: label);
     }
   });
 
@@ -134,13 +138,13 @@ void main() {
     // only sidebar in the tree, but be explicit rather than relying on order.
     final inDrawer = find.descendant(
       of: find.byType(Drawer),
-      matching: find.text(DashboardSection.projects.label),
+      matching: find.text('Settings'),
     );
     expect(inDrawer, findsOneWidget);
     await tester.tap(inDrawer);
     await step(tester);
 
-    expect(app.router.location, AppRoutes.projects);
+    expect(app.router.location, AppRoutes.settings);
     expect(app.navigation.isMobileDrawerOpen, isFalse);
   });
 }

@@ -111,15 +111,8 @@ class DemoDashboardRepository implements DashboardRepository {
         ),
       ],
       userActivity: [
-        for (final (i, label) in const [
-          'Mon',
-          'Tue',
-          'Wed',
-          'Thu',
-          'Fri',
-          'Sat',
-          'Sun'
-        ].indexed)
+        for (final (i, label)
+            in const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexed)
           (
             label: label,
             active: 2400 + _rng.nextInt(900) - i * 40,
@@ -280,7 +273,15 @@ class DemoDashboardRepository implements DashboardRepository {
     // Deterministic per range so switching back and forth is stable.
     final rng = Random(range.index * 7 + 3);
     final labels = switch (range) {
-      ChartRange.week => const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      ChartRange.week => const [
+          'Mon',
+          'Tue',
+          'Wed',
+          'Thu',
+          'Fri',
+          'Sat',
+          'Sun'
+        ],
       ChartRange.month => [for (var i = 1; i <= 30; i += 1) '$i'],
       ChartRange.quarter => [for (var i = 1; i <= 12; i += 1) 'W$i'],
       ChartRange.year => const [

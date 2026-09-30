@@ -39,7 +39,7 @@ void main() {
     String? code;
     final auth = controller((c) => code = c);
     await pumpApp(tester, auth);
-    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
 
     unawaited(auth.signIn('me@stackly.com', 'password123'));
     await step(tester);
@@ -47,29 +47,40 @@ void main() {
     // Second factor outstanding. The OTP is part of the login form, so the
     // user stays on it — there is no separate verify screen — and the
     // dashboard is not reachable.
-    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Two-factor verification'), findsOneWidget);
     expect(find.text('One-time password'), findsOneWidget);
     expect(find.textContaining('Welcome back,'), findsNothing);
     expect(code, isNotNull);
   });
 
-  testWidgets('the login form carries email, password and OTP together',
-      (tester) async {
+  testWidgets('identify, then password, then OTP', (tester) async {
     await pumpApp(tester, controller());
     await step(tester);
 
-    // All three inputs on one screen, OTP below the password.
-    expect(find.widgetWithText(TextFormField, 'Email address'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, 'Password'), findsOneWidget);
-    expect(find.text('One-time password'), findsOneWidget);
-    expect(find.text('Sign In'), findsOneWidget);
-
-    // The OTP boxes sit below the password field, not on another screen.
-    final password = tester.getTopLeft(
-      find.widgetWithText(TextFormField, 'Password'),
+    // Step 1: workspace + work email.
+    expect(find.text('STEP 1 OF 3 · IDENTIFY'), findsOneWidget);
+    expect(find.text('Workspace'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'you@acmecorp.com'),
+      'me@stackly.com',
     );
-    final otp = tester.getTopLeft(find.text('One-time password'));
-    expect(otp.dy, greaterThan(password.dy));
+    await tester.tap(find.text('Continue'));
+    await step(tester);
+
+    // Step 2: password.
+    expect(find.text('STEP 2 OF 3 · PASSWORD'), findsOneWidget);
+    expect(find.text('Enter your password'), findsWidgets);
+    expect(find.text('me@stackly.com'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Enter your password'),
+      'password123',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await step(tester);
+
+    // Step 3: OTP.
+    expect(find.text('STEP 3 OF 3 · VERIFY'), findsOneWidget);
+    expect(find.text('One-time password'), findsOneWidget);
   });
 
   testWidgets('a wrong code keeps the user on login with an error',
@@ -85,7 +96,7 @@ void main() {
     ));
     await step(tester);
 
-    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
     expect(find.textContaining('Welcome back,'), findsNothing);
     expect(auth.error, isNotNull);
     expect(code, isNotNull);
@@ -124,15 +135,13 @@ void main() {
     await step(tester);
 
     expect(find.textContaining('Welcome back,'), findsOneWidget);
-    // Labelled in the sidebar...
-    expect(find.text('Sign Out'), findsOneWidget);
-    // ...and always in the header, icon-only at this width.
-    expect(find.byTooltip('Sign Out'), findsOneWidget);
+    // "Log out" in the sidebar...
+    expect(find.text('Log out'), findsOneWidget);
 
-    // ...and reachable from the header's profile dropdown as well.
+    // ...and "Sign Out" in the header's profile dropdown.
     await tester.tap(find.bySemanticsLabel(RegExp('Account menu')));
     await step(tester);
-    expect(find.text('Sign Out'), findsNWidgets(2));
+    expect(find.text('Sign Out'), findsOneWidget);
     expect(find.text('My Profile'), findsOneWidget);
     expect(find.text('Account Settings'), findsOneWidget);
   });
@@ -150,7 +159,7 @@ void main() {
 
     unawaited(auth.signOut());
     await step(tester);
-    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
     expect(find.textContaining('Welcome back,'), findsNothing);
   });
 
@@ -163,7 +172,7 @@ void main() {
     await step(tester);
 
     expect(find.text('Incorrect email or password.'), findsOneWidget);
-    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
   });
 
   testWidgets('pasting the code spreads across all six boxes', (tester) async {
@@ -193,18 +202,7 @@ void main() {
     unawaited(auth.signIn('me@stackly.com', 'password123'));
     await step(tester);
 
-    // Fill the form the way a user would, then paste the code into the OTP
-    // boxes: completing them submits without touching the button.
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Email address'),
-      'me@stackly.com',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Password'),
-      'password123',
-    );
-    await step(tester);
-
+    // Completing the boxes submits without touching the button.
     await tester.enterText(find.byType(TextField).last, code!);
     await step(tester);
     await step(tester);

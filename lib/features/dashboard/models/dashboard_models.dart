@@ -47,13 +47,13 @@ enum ChartRange {
 class ProjectStatus {
   const ProjectStatus._(this.label, this.color);
 
-  static const active = ProjectStatus._('Active', Color(0xFF2563EB));
-  static const inProgress = ProjectStatus._('In Progress', Color(0xFF7C3AED));
-  static const completed = ProjectStatus._('Completed', Color(0xFF059669));
-  static const onHold = ProjectStatus._('On Hold', Color(0xFF9CA3AF));
-  static const atRisk = ProjectStatus._('At Risk', Color(0xFFDC2626));
-  static const pending = ProjectStatus._('Pending', Color(0xFFD97706));
-  static const blocked = ProjectStatus._('Blocked', Color(0xFFB91C1C));
+  static const active = ProjectStatus._('Active', kInfo);
+  static const inProgress = ProjectStatus._('In Progress', kPurple);
+  static const completed = ProjectStatus._('Completed', kSuccess);
+  static const onHold = ProjectStatus._('On Hold', kNeutral);
+  static const atRisk = ProjectStatus._('At Risk', kDanger);
+  static const pending = ProjectStatus._('Pending', kWarning);
+  static const blocked = ProjectStatus._('Blocked', kDanger);
 
   final String label;
   final Color color;
@@ -80,10 +80,10 @@ class Project {
 }
 
 enum Priority {
-  low('Low', Color(0xFF6B7280)),
-  medium('Medium', Color(0xFF2563EB)),
-  high('High', Color(0xFFD97706)),
-  critical('Critical', Color(0xFFDC2626));
+  low('Low', kNeutral),
+  medium('Medium', kInfo),
+  high('High', kWarning),
+  critical('Critical', kDanger);
 
   const Priority(this.label, this.color);
   final String label;
@@ -91,10 +91,10 @@ enum Priority {
 }
 
 enum TaskState {
-  pending('Pending', Color(0xFFD97706)),
-  inProgress('In Progress', Color(0xFF7C3AED)),
-  completed('Completed', Color(0xFF059669)),
-  overdue('Overdue', Color(0xFFDC2626));
+  pending('Pending', kWarning),
+  inProgress('In Progress', kPurple),
+  completed('Completed', kSuccess),
+  overdue('Overdue', kDanger);
 
   const TaskState(this.label, this.color);
   final String label;
@@ -134,9 +134,9 @@ class Activity {
 }
 
 enum ServiceState {
-  operational('Operational', Color(0xFF059669)),
-  degraded('Degraded', Color(0xFFD97706)),
-  down('Down', Color(0xFFDC2626)),
+  operational('Operational', kSuccess),
+  degraded('Degraded', kWarning),
+  down('Down', kDanger),
   unknown('Unknown', kMuted);
 
   const ServiceState(this.label, this.color);
@@ -260,10 +260,10 @@ class PerformanceSeries {
 // ---------------------------------------------------------------------------
 
 enum AccountStatus {
-  active('Active', Color(0xFF059669)),
-  inactive('Inactive', Color(0xFF9CA3AF)),
-  pending('Pending', Color(0xFFD97706)),
-  suspended('Suspended', Color(0xFFDC2626));
+  active('Active', kSuccess),
+  inactive('Inactive', kNeutral),
+  pending('Pending', kWarning),
+  suspended('Suspended', kDanger);
 
   const AccountStatus(this.label, this.color);
   final String label;
@@ -293,9 +293,9 @@ class Member {
 }
 
 enum CustomerHealth {
-  healthy('Healthy', Color(0xFF059669)),
-  watch('Watch', Color(0xFFD97706)),
-  atRisk('At Risk', Color(0xFFDC2626));
+  healthy('Healthy', kSuccess),
+  watch('Watch', kWarning),
+  atRisk('At Risk', kDanger);
 
   const CustomerHealth(this.label, this.color);
   final String label;
@@ -373,11 +373,11 @@ class ProjectRecord {
 /// Board state for the Tasks page. Wider than the overview's [TaskState],
 /// which only needs the four summary buckets.
 enum TaskStage {
-  todo('To Do', Color(0xFF6B7280)),
-  inProgress('In Progress', Color(0xFF7C3AED)),
-  review('Review', Color(0xFF2563EB)),
-  completed('Completed', Color(0xFF059669)),
-  blocked('Blocked', Color(0xFFB91C1C));
+  todo('To Do', kNeutral),
+  inProgress('In Progress', kPurple),
+  review('Review', kInfo),
+  completed('Completed', kSuccess),
+  blocked('Blocked', kDanger);
 
   const TaskStage(this.label, this.color);
   final String label;

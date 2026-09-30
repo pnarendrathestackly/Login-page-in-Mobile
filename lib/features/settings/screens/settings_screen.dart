@@ -72,21 +72,38 @@ class _SettingsPageState extends State<SettingsPage> {
       title: 'Change Password',
       subtitle: 'You will stay signed in on this device.',
       submitLabel: 'Update password',
-      fields: const [
-        FormFieldSpec(
+      busyLabel: 'Updating...',
+      fields: [
+        const FormFieldSpec(
           label: 'Current password',
           icon: Icons.lock_outline,
+          obscure: true,
         ),
-        FormFieldSpec(label: 'New password', icon: Icons.lock_reset_outlined),
+        FormFieldSpec(
+          label: 'New password',
+          icon: Icons.lock_reset_outlined,
+          obscure: true,
+          validator: passwordValidator,
+        ),
+        const FormFieldSpec(
+          label: 'Confirm new password',
+          icon: Icons.lock_reset_outlined,
+          obscure: true,
+        ),
       ],
+      onSubmit: (v) async {
+        if (v['New password'] != v['Confirm new password']) {
+          return 'The new passwords do not match.';
+        }
+        return widget.controller.changePassword(
+          v['Current password']!,
+          v['New password']!,
+        );
+      },
     );
-    if (values == null || !mounted) return;
-    // ponytail: no password endpoint on the demo backend. Reports honestly
-    // rather than pretending the change was applied.
-    showToast(
-      context,
-      'Password changes are not connected to a backend yet.',
-    );
+    if (values != null && mounted) {
+      showToast(context, 'Password changed successfully.');
+    }
   }
 
   Future<void> _signOutEverywhere() async {
@@ -110,11 +127,10 @@ class _SettingsPageState extends State<SettingsPage> {
       confirmLabel: 'Deactivate',
     );
     if (!ok || !mounted) return;
-    showToast(
-      context,
-      'Account deactivation is not connected to a backend yet.',
-      isError: true,
-    );
+    // On success the controller signs out and the router shows login with
+    // the reason; only a failure needs reporting here.
+    final error = await widget.controller.deactivateAccount();
+    if (error != null && mounted) showToast(context, error, isError: true);
   }
 
   Future<void> _deleteAccount() async {
@@ -126,11 +142,8 @@ class _SettingsPageState extends State<SettingsPage> {
       confirmLabel: 'Delete account',
     );
     if (!ok || !mounted) return;
-    showToast(
-      context,
-      'Account deletion is not connected to a backend yet.',
-      isError: true,
-    );
+    final error = await widget.controller.deleteAccount();
+    if (error != null && mounted) showToast(context, error, isError: true);
   }
 
   @override
@@ -444,7 +457,7 @@ class _TabButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final danger = tab == _Tab.danger;
-    final accent = danger ? const Color(0xFFDC2626) : kIndigo;
+    final accent = danger ? kDanger : kIndigo;
     return Padding(
       padding: EdgeInsets.symmetric(vertical: compact ? 0 : 2),
       child: Material(
@@ -519,10 +532,10 @@ class _Section extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: kSurface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: danger ? const Color(0xFFDC2626).withValues(alpha: .35) : kBorder,
+          color: danger ? kDanger.withValues(alpha: .35) : kBorder,
         ),
       ),
       child: Column(
@@ -631,7 +644,7 @@ class _ChoiceRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             constraints: const BoxConstraints(maxWidth: 240),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7F7FC),
+              color: kFieldFill,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: kBorder),
             ),
@@ -708,7 +721,7 @@ class _ToggleRow extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: Colors.white,
+            activeThumbColor: kOnPrimary,
             activeTrackColor: kIndigo,
           ),
         ],
@@ -735,7 +748,7 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = destructive ? const Color(0xFFDC2626) : kIndigo;
+    final accent = destructive ? kDanger : kIndigo;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Wrap(
@@ -826,8 +839,7 @@ class _SessionRow extends StatelessWidget {
               ],
             ),
           ),
-          if (current)
-            const StatusPill(label: 'This device', color: Color(0xFF059669)),
+          if (current) const StatusPill(label: 'This device', color: kSuccess),
         ],
       ),
     );

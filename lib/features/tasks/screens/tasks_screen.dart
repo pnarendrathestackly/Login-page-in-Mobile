@@ -222,7 +222,7 @@ class _TasksPageState extends State<TasksPage>
                   child: Icon(
                     Icons.error_outline,
                     size: 15,
-                    color: Color(0xFFDC2626),
+                    color: kDanger,
                   ),
                 ),
               Expanded(
@@ -274,8 +274,7 @@ class _TasksPageState extends State<TasksPage>
           sortBy: (t) => t.priority.index,
           cell: (t) => Align(
             alignment: Alignment.centerLeft,
-            child:
-                StatusPill(label: t.priority.label, color: t.priority.color),
+            child: StatusPill(label: t.priority.label, color: t.priority.color),
           ),
         ),
         TableColumn(
@@ -303,7 +302,7 @@ class _TasksPageState extends State<TasksPage>
               formatDate(t.due),
               style: TextStyle(
                 fontSize: 13,
-                color: overdue ? const Color(0xFFDC2626) : kMuted,
+                color: overdue ? kDanger : kMuted,
                 fontWeight: overdue ? FontWeight.w600 : FontWeight.w400,
               ),
             );
@@ -453,10 +452,9 @@ class _TasksPageState extends State<TasksPage>
                 labelStyle: TextStyle(
                   fontSize: 13.5,
                   color: _overdueOnly ? kIndigo : kInk,
-                  fontWeight:
-                      _overdueOnly ? FontWeight.w600 : FontWeight.w400,
+                  fontWeight: _overdueOnly ? FontWeight.w600 : FontWeight.w400,
                 ),
-                backgroundColor: const Color(0xFFF7F7FC),
+                backgroundColor: kFieldFill,
                 selectedColor: kIndigo.withValues(alpha: .10),
                 side: BorderSide(color: _overdueOnly ? kIndigo : kBorder),
                 shape: RoundedRectangleBorder(
@@ -494,9 +492,8 @@ class _TasksPageState extends State<TasksPage>
                 onView: () => _view(t),
                 onEdit: () => _edit(t),
                 onDelete: () => _delete(t),
-                onComplete: t.stage == TaskStage.completed
-                    ? null
-                    : () => _complete(t),
+                onComplete:
+                    t.stage == TaskStage.completed ? null : () => _complete(t),
               ),
             ),
             Pagination(
@@ -535,11 +532,11 @@ class _TaskCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFE),
+        color: kInset,
         borderRadius: BorderRadius.circular(12),
         // Overdue rows carry a red edge so they stand out while scanning.
         border: Border.all(
-          color: overdue ? const Color(0xFFDC2626).withValues(alpha: .4) : kBorder,
+          color: overdue ? kDanger.withValues(alpha: .4) : kBorder,
         ),
       ),
       child: Column(
@@ -554,7 +551,7 @@ class _TaskCard extends StatelessWidget {
                   child: Icon(
                     Icons.error_outline,
                     size: 16,
-                    color: Color(0xFFDC2626),
+                    color: kDanger,
                   ),
                 ),
               Expanded(
@@ -595,7 +592,7 @@ class _TaskCard extends StatelessWidget {
                 '· due ${formatDate(task.due)}',
                 style: TextStyle(
                   fontSize: 12.5,
-                  color: overdue ? const Color(0xFFDC2626) : kMuted,
+                  color: overdue ? kDanger : kMuted,
                   fontWeight: overdue ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),

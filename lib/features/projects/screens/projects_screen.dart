@@ -75,8 +75,7 @@ class _ProjectsPageState extends State<ProjectsPage>
     for (final p in _projects) {
       seen[p.status.label] = p.status;
     }
-    return seen.values.toList()
-      ..sort((a, b) => a.label.compareTo(b.label));
+    return seen.values.toList()..sort((a, b) => a.label.compareTo(b.label));
   }
 
   Future<void> _add() async {
@@ -253,9 +252,7 @@ class _ProjectsPageState extends State<ProjectsPage>
                 style: TextStyle(
                   fontSize: 13,
                   // Overrunning end dates read as a warning, not neutral text.
-                  color: p.isDelayed(DateTime.now())
-                      ? const Color(0xFFDC2626)
-                      : kMuted,
+                  color: p.isDelayed(DateTime.now()) ? kDanger : kMuted,
                   fontWeight: p.isDelayed(DateTime.now())
                       ? FontWeight.w600
                       : FontWeight.w400,
@@ -424,8 +421,7 @@ class _ProjectsPageState extends State<ProjectsPage>
           if (visible.isEmpty)
             EmptyState(
               icon: isFiltering ? Icons.search_off : Icons.folder_open_outlined,
-              title:
-                  isFiltering ? 'No matching projects' : 'No projects yet',
+              title: isFiltering ? 'No matching projects' : 'No projects yet',
               message: isFiltering
                   ? 'Try a different search term or clear the filters.'
                   : 'Create your first project to start tracking progress.',
@@ -496,7 +492,7 @@ class _TeamCell extends StatelessWidget {
                 child: Container(
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white,
+                    color: kInk,
                   ),
                   padding: const EdgeInsets.all(1.5),
                   child: InitialsAvatar(name: name, radius: 11.5),
@@ -543,7 +539,7 @@ class _ProjectCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFE),
+        color: kInset,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: kBorder),
       ),
@@ -594,7 +590,7 @@ class _ProjectCard extends StatelessWidget {
                 'Due ${formatDate(project.end)}',
                 style: TextStyle(
                   fontSize: 12.5,
-                  color: delayed ? const Color(0xFFDC2626) : kMuted,
+                  color: delayed ? kDanger : kMuted,
                   fontWeight: delayed ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),

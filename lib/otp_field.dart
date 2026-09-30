@@ -120,8 +120,7 @@ class OtpFieldState extends State<OtpField> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final gap = constraints.maxWidth < 320 ? 6.0 : 8.0;
-        final available =
-            constraints.maxWidth - gap * (widget.length - 1);
+        final available = constraints.maxWidth - gap * (widget.length - 1);
         final box = (available / widget.length).clamp(34.0, 56.0);
         return Semantics(
           label: '${widget.length}-digit verification code',
@@ -146,7 +145,7 @@ class OtpFieldState extends State<OtpField> {
   }
 
   Widget _box(int i, double size) {
-    final border = widget.hasError ? const Color(0xFFDC2626) : kBorder;
+    final border = widget.hasError ? kDanger : kBorder;
     final filled = _controllers[i].text.isNotEmpty;
     return Focus(
       onKeyEvent: (node, event) => _onKey(node, event, i),
@@ -176,7 +175,7 @@ class OtpFieldState extends State<OtpField> {
             decoration: InputDecoration(
               counterText: '',
               filled: true,
-              fillColor: Colors.white,
+              fillColor: kFieldFill,
               contentPadding: EdgeInsets.zero,
               enabledBorder: _outline(border),
               border: _outline(border),

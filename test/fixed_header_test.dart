@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stackly_auth/auth.dart';
-import 'package:stackly_auth/dashboard.dart';
 import 'package:stackly_auth/widgets/header/app_header.dart';
 import 'package:stackly_auth/providers/auth_provider.dart';
 
@@ -57,10 +56,13 @@ void main() {
     expect(find.byType(DashboardHeader), findsOneWidget);
   });
 
-  testWidgets('the page title stays visible after scrolling', (tester) async {
+  testWidgets('the account menu stays reachable after scrolling on a phone',
+      (tester) async {
     await signedIn(tester, size: const Size(500, 800));
 
-    expect(find.text(DashboardSection.overview.label), findsWidgets);
+    final account = find.bySemanticsLabel(RegExp('Account menu'));
+    expect(account, findsOneWidget);
+    final before = tester.getTopLeft(account);
 
     await tester.drag(
       find.byType(SingleChildScrollView).first,
@@ -68,7 +70,7 @@ void main() {
     );
     await step(tester);
 
-    // The title lives in the fixed header, so scrolling cannot remove it.
-    expect(find.text(DashboardSection.overview.label), findsWidgets);
+    // The header is outside the scroll view, so it does not move.
+    expect(tester.getTopLeft(account), before);
   });
 }

@@ -3,6 +3,10 @@ import 'package:provider/provider.dart';
 
 import 'core/responsive/responsive.dart';
 import 'core/platform/modules.dart';
+import 'core/platform/permissions.dart';
+import 'features/admin/super_admin_dashboard.dart';
+import 'features/hrms/hrms_controller.dart';
+import 'features/hrms/hrms_shell.dart';
 import 'features/module/screens/module_page_screen.dart';
 
 import 'auth.dart';
@@ -21,7 +25,7 @@ import './widgets/common/sections.dart';
 import 'main.dart';
 import 'motion.dart';
 import 'providers/navigation_provider.dart';
-import 'widgets.dart';
+import 'widgets/common/dialogs.dart';
 import 'widgets/header/app_header.dart';
 import 'widgets/sidebar/app_sidebar.dart';
 import 'widgets/sidebar/sidebar_constants.dart';
@@ -97,6 +101,14 @@ class _DashboardPageState extends State<DashboardPage> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   late final DashboardRepository _repo =
       widget.repository ?? DemoDashboardRepository();
+
+  /// One HRMS controller (in-memory repository + audit log) for the session,
+  /// created lazily the first time an HRMS route is shown. Stamped with the
+  /// signed-in user's name so audit entries name a real actor.
+  HrmsController? _hrms;
+  HrmsController get _hrmsController => _hrms ??= HrmsController(
+        actor: widget.controller.user?.name ?? 'System',
+      );
 
   /// Mirrors `widget.section`, which the router drives from the URL. Held as
   /// state (and synced in [didUpdateWidget]) so the shell keeps one element
@@ -293,18 +305,13 @@ class _DashboardPageState extends State<DashboardPage> {
     // for the frame between sign-out and the swap.
     if (user == null) return const SizedBox.shrink();
 
-    // Sidebar UI state lives in NavigationProvider, not in this widget.
-    final nav = context.watch<NavigationProvider>();
-    final collapsed = wide && !nav.isSidebarExpanded;
-
-    final sidebar = AppSidebar(
-      controller: widget.controller,
-      collapsed: collapsed,
-    );
+    // Drawer state lives in NavigationProvider, not in this widget.
+    final nav = context.read<NavigationProvider>();
+    final content = _content(user);
 
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: const Color(0xFFF1F0FB),
+      backgroundColor: kPageCanvas,
       // Swipe/scrim dismissal has to reach the provider too, or the flag
       // would stay true after the drawer is gone.
       onDrawerChanged: (open) => open ? nav.openDrawer() : nav.closeDrawer(),
@@ -312,78 +319,74 @@ class _DashboardPageState extends State<DashboardPage> {
           ? null
           : Drawer(
               width: kSidebarWidth,
+              backgroundColor: kRail,
+              child: AppSidebar(
+                controller: widget.controller,
+                onClose: () => _scaffoldKey.currentState?.closeDrawer(),
+              ),
+            ),
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (wide)
+            SizedBox(
+              width: kSidebarWidth,
               child: AppSidebar(controller: widget.controller),
             ),
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(wide ? 16 : 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (wide) ...[
-                FadeIn(
-                  offset: 0,
-                  child: AnimatedContainer(
-                    duration: Motion.duration(context, Motion.standard),
-                    curve: Motion.standardCurve,
-                    width: collapsed ? kSidebarCollapsedWidth : kSidebarWidth,
-                    child: _Surface(child: sidebar),
+          Expanded(
+            child: SafeArea(
+              left: !wide,
+              child: Column(
+                children: [
+                  DashboardHeader(
+                    user: user,
+                    controller: widget.controller,
+                    onMenu: wide
+                        ? null
+                        : () {
+                            nav.openDrawer();
+                            _scaffoldKey.currentState?.openDrawer();
+                          },
+                    notifications: _notifications,
+                    notificationsLoading: _notificationsLoading,
+                    notificationsError: _notificationsError,
+                    onRetryNotifications: _loadNotifications,
+                    onRead: (n) => _markRead(id: n.id),
+                    onReadAll: _markRead,
+                    onNavigate: _select,
                   ),
-                ),
-                const SizedBox(width: 16),
-              ],
-              Expanded(
-                child: Column(
-                  children: [
-                    FadeIn(
-                      delay: Motion.stagger,
-                      child: _Surface(
-                        child: DashboardHeader(
-                          title: _modulePage?.title ?? _section.label,
-                          breadcrumb: _module == null
-                              ? null
-                              : 'Home / ${_module!.title} / '
-                                  '${_modulePage!.title}',
-                          user: user,
-                          controller: widget.controller,
-                          onMenu: wide
-                              ? nav.toggleSidebar
-                              : () {
-                                  nav.openDrawer();
-                                  _scaffoldKey.currentState?.openDrawer();
-                                },
-                          notifications: _notifications,
-                          notificationsLoading: _notificationsLoading,
-                          notificationsError: _notificationsError,
-                          onRetryNotifications: _loadNotifications,
-                          onRead: (n) => _markRead(id: n.id),
-                          onReadAll: _markRead,
-                          onNavigate: _select,
-                        ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(wide ? 20 : 12),
+                      child: FadeIn(
+                        key: ValueKey(_modulePage == null
+                            ? _section.name
+                            : '${_module!.id}/${_modulePage!.slug}'),
+                        delay: Motion.stagger,
+                        // Some screens draw their own heading (with actions).
+                        child: content is OwnsPageHeading
+                            ? content
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  PageHeading(
+                                    breadcrumb: _module == null
+                                        ? ['Home', _section.label]
+                                        : [_module!.title, _modulePage!.title],
+                                    title: _modulePage?.title ?? _section.label,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  content,
+                                ],
+                              ),
                       ),
                     ),
-                    SizedBox(height: wide ? 16 : 12),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: wide ? 8 : 4,
-                          vertical: 8,
-                        ),
-                        child: FadeIn(
-                          key: ValueKey(_modulePage == null
-                              ? _section.name
-                              : '${_module!.id}/${_modulePage!.slug}'),
-                          delay: Motion.stagger * 2,
-                          child: _content(user),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -394,11 +397,40 @@ class _DashboardPageState extends State<DashboardPage> {
     final module = _module;
     final page = _modulePage;
     if (module != null && page != null) {
+      // HRMS pages have real implementations; dispatch to them. Anything not
+      // yet built falls through to the honest placeholder.
+      if (module.id == 'admin' && page.slug == 'overview') {
+        return const PlatformAdminScreen();
+      }
+      if (module.id == 'admin' && page.slug == 'global') {
+        return const GlobalDashboardScreen();
+      }
+      if (module.id == 'admin' && page.slug == 'settings') {
+        return const PlatformConfigScreen();
+      }
+      if (module.id == 'admin' && page.slug == 'branding') {
+        return const PlatformBrandingScreen();
+      }
+      if (module.id == 'admin' && page.slug == 'features') {
+        return const FeatureManagementScreen();
+      }
+      if (module.id == 'admin' && page.slug == 'licenses') {
+        return const LicenseManagementScreen();
+      }
+      if (module.id == 'hrms') {
+        final screen = hrmsScreenFor(_hrmsController, page);
+        if (screen != null) return screen;
+      }
       return ModulePageScreen(module: module, page: page);
     }
 
     switch (_section) {
       case DashboardSection.overview:
+        // Platform admins land on the platform-wide dashboard; everyone else
+        // keeps the workspace overview.
+        if (widget.controller.permissions.can(Perm.adminView)) {
+          return SuperAdminDashboard(user: user);
+        }
         final up = _fetch(DashboardSection.overview, _repo.upcoming);
         return OverviewScreen(
           user: user,
@@ -494,34 +526,6 @@ class _Async<T> {
   final T? value;
   final String? error;
   final bool loading;
-}
-
-/// Rounded white panel the sidebar and header sit in, so each reads as its own
-/// surface floating on the background.
-class _Surface extends StatelessWidget {
-  const _Surface({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: kBorder),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F000000),
-            blurRadius: 18,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
 }
 
 /// The overview itself: welcome, KPIs, analytics, and the detail panels.
@@ -684,10 +688,18 @@ class _OverviewBody extends StatelessWidget {
         final projectStatus = ProjectStatusPanel(slices: data.projectBreakdown);
         final projects = ProjectTable(
           projects: data.projects,
-          onView: (p) => showToast(
+          onView: (p) => showDetailDialog(
             context,
-            '${p.name} — a project detail screen is not built yet.',
-            isError: false,
+            title: p.name,
+            subtitle: p.client,
+            fields: {
+              'Client': p.client,
+              'Owner': p.owner,
+              'Status': p.status.label,
+              'Progress': '${(p.progress * 100).round()}%',
+              'Due': '${p.due.year}-${p.due.month.toString().padLeft(2, '0')}'
+                  '-${p.due.day.toString().padLeft(2, '0')}',
+            },
           ),
         );
         final tasks = TaskOverviewPanel(tasks: data.tasks);
@@ -752,7 +764,8 @@ class _OverviewBody extends StatelessWidget {
                 stretch: false,
               ),
               const SizedBox(height: 16),
-              _SideBySide(left: tasks, right: health, leftFlex: 3, rightFlex: 2),
+              _SideBySide(
+                  left: tasks, right: health, leftFlex: 3, rightFlex: 2),
               const SizedBox(height: 16),
               quick,
             ] else
@@ -911,4 +924,3 @@ class _Placeholder extends StatelessWidget {
     );
   }
 }
-

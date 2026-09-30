@@ -18,7 +18,11 @@ class Tenant {
     required this.name,
     this.plan = 'Enterprise',
     this.region = 'ap-south-1',
+    this.slug = '',
   });
+
+  /// Workspace name used at sign-in (`<slug>.oneenterprise.io`).
+  final String slug;
 
   /// Stable tenant identifier, sent as `X-Tenant-Id`.
   final String id;
