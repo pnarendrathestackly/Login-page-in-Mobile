@@ -197,6 +197,7 @@ class _SplashArtboard extends StatelessWidget {
               height: 34.9,
               filterQuality: FilterQuality.medium,
               semanticLabel: 'Stackly',
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             ),
           ),
           Positioned(

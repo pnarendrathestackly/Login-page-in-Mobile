@@ -86,6 +86,7 @@ class _PhoneHeader extends StatelessWidget {
                 height: 32,
                 filterQuality: FilterQuality.medium,
                 semanticLabel: 'Stackly',
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 15),
               Padding(

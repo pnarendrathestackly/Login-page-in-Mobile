@@ -855,6 +855,7 @@ class StacklyLogo extends StatelessWidget {
         height: height,
         filterQuality: FilterQuality.medium,
         semanticLabel: 'Stackly',
+        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
       ),
     );
   }

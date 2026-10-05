@@ -444,7 +444,12 @@ class _LoginFormState extends State<LoginForm> {
         SizedBox(height: _g(24, 20)),
         _SocialButton(
           'Google',
-          Image.asset('assets/google logo.png', width: 18, height: 18),
+          Image.asset(
+            'assets/google logo.png',
+            width: 18,
+            height: 18,
+            errorBuilder: (_, __, ___) => const SizedBox(width: 18, height: 18),
+          ),
           compact: _compact,
         ),
         SizedBox(height: _compact ? 9 : 10),
