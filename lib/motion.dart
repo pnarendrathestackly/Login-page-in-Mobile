@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 /// Central animation vocabulary. Every animated surface pulls its timing and
@@ -209,4 +211,164 @@ class ExpandFade extends StatelessWidget {
       child: visible ? child : const SizedBox.shrink(),
     );
   }
+}
+
+/// Wraps each content child of a form column in a [FadeIn], one stagger step
+/// apart, so a screen assembles in reading order. Spacers pass through
+/// untouched. Wrapping every child keeps positional matching the same as the
+/// bare column, so field state survives rebuilds; give the column a key that
+/// changes per step to replay the sequence.
+List<Widget> staggerIn(List<Widget> children, {int maxSteps = 8}) {
+  var n = 0;
+  return [
+    for (final child in children)
+      if (child is SizedBox && child.child == null)
+        child
+      else
+        FadeIn(
+          delay: Motion.stagger * math.min(n++, maxSteps),
+          duration: Motion.page,
+          child: child,
+        ),
+  ];
+}
+
+/// Scale-and-fade pop for a confirmation mark: overshoots slightly, then
+/// settles. Under reduced motion the child is shown at its final state.
+class PopIn extends StatelessWidget {
+  const PopIn({super.key, required this.child, this.delay = Duration.zero});
+
+  final Widget child;
+  final Duration delay;
+
+  @override
+  Widget build(BuildContext context) {
+    if (Motion.reduced(context)) return child;
+    final total = delay + Motion.complex;
+    final start = delay.inMicroseconds / total.inMicroseconds;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: total,
+      builder: (context, v, child) {
+        final t = v <= start ? 0.0 : (v - start) / (1 - start);
+        return Opacity(
+          opacity: Curves.easeOut.transform(t),
+          child: Transform.scale(
+            scale: .6 + .4 * Curves.easeOutBack.transform(t),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+}
+
+/// Slow drifting light behind a dark brand surface: two soft glows on
+/// independent paths and a few twinkling points. Paints nothing under reduced
+/// motion or when [Motion.ambient] is off, leaving the surface as designed.
+class AmbientGlow extends StatefulWidget {
+  const AmbientGlow({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<AmbientGlow> createState() => _AmbientGlowState();
+}
+
+class _AmbientGlowState extends State<AmbientGlow>
+    with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 14),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (Motion.reduced(context) || !Motion.ambient) {
+      _c.stop();
+    } else if (!_c.isAnimating) {
+      _c.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        if (_c.isAnimating)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: RepaintBoundary(
+                child: CustomPaint(painter: _GlowPainter(_c)),
+              ),
+            ),
+          ),
+        widget.child,
+      ],
+    );
+  }
+}
+
+class _GlowPainter extends CustomPainter {
+  _GlowPainter(this.t) : super(repaint: t);
+
+  final Animation<double> t;
+
+  static const _stars = [
+    Offset(.82, .18),
+    Offset(.64, .42),
+    Offset(.91, .66),
+    Offset(.48, .12),
+    Offset(.74, .86),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final a = t.value * 2 * math.pi;
+    final r = size.shortestSide * .9;
+
+    void glow(Offset c, Color color) => canvas.drawCircle(
+          c,
+          r,
+          Paint()
+            ..shader = RadialGradient(
+              colors: [color, color.withValues(alpha: 0)],
+            ).createShader(Rect.fromCircle(center: c, radius: r)),
+        );
+
+    glow(
+      Offset(
+        size.width * (.78 + .14 * math.cos(a)),
+        size.height * (.35 + .25 * math.sin(a)),
+      ),
+      const Color(0xFF4F7FF1).withValues(alpha: .20),
+    );
+    glow(
+      Offset(
+        size.width * (.30 + .18 * math.sin(a + 1.3)),
+        size.height * (.95 + .2 * math.cos(2 * a)),
+      ),
+      const Color(0xFF6C4FE0).withValues(alpha: .14),
+    );
+
+    for (final (i, s) in _stars.indexed) {
+      final tw = (math.sin(a * 3 + i * 1.7) + 1) / 2;
+      canvas.drawCircle(
+        Offset(s.dx * size.width, s.dy * size.height),
+        .8 + .7 * tw,
+        Paint()..color = Colors.white.withValues(alpha: .15 + .45 * tw),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_GlowPainter old) => old.t != t;
 }

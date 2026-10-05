@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import 'auth.dart';
 import 'core/platform/regions.dart';
+import 'motion.dart';
 import 'features/auth/screens/widgets/auth_status_panel.dart';
 import 'features/auth/screens/widgets/signup_fields.dart';
 import 'features/auth/screens/login/login_screen.dart' show OE;
@@ -271,9 +272,11 @@ class _SignUpPageState extends State<SignUpPage> {
       'SUPER ADMIN ACCOUNT',
       'TERMS & AUTHORIZATION',
     ];
+    // Keyed by step so each step assembles afresh, in reading order.
     return Column(
+      key: ValueKey(_step),
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+      children: staggerIn([
         Align(
           alignment: Alignment.centerLeft,
           child: _BackLink(onTap: widget.controller.busy ? null : _back),
@@ -333,7 +336,7 @@ class _SignUpPageState extends State<SignUpPage> {
             ),
           ],
         ),
-      ],
+      ]),
     );
   }
 
@@ -759,7 +762,8 @@ class _SignUpPageState extends State<SignUpPage> {
             body: const TextSpan(
               children: [
                 TextSpan(text: 'I agree to the '),
-                TextSpan(text: 'Data Processing Agreement', style: kAgreementLink),
+                TextSpan(
+                    text: 'Data Processing Agreement', style: kAgreementLink),
                 TextSpan(
                   text: ' governing how organization data is stored and '
                       'processed.',
@@ -796,12 +800,23 @@ class _Progress extends StatelessWidget {
           for (var i = 0; i < 3; i++) ...[
             if (i > 0) const SizedBox(width: 8),
             Expanded(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                height: 4,
-                decoration: BoxDecoration(
-                  color: i <= step ? OE.navy : OE.border,
-                  borderRadius: BorderRadius.circular(2),
+              // Each segment fills left to right as its step is reached.
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: Container(
+                  height: 4,
+                  color: OE.border,
+                  alignment: Alignment.centerLeft,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(end: i <= step ? 1 : 0),
+                    duration: Motion.duration(context, Motion.complex),
+                    curve: Motion.standardCurve,
+                    builder: (context, v, _) => FractionallySizedBox(
+                      widthFactor: v,
+                      heightFactor: 1,
+                      child: const ColoredBox(color: OE.navy),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -906,9 +921,9 @@ class _FieldState extends State<_Field> {
             children: [
               TextSpan(text: widget.label),
               const TextSpan(
-                  text: ' *',
-                  style: TextStyle(color: Color(0xFFDC2626)),
-                ),
+                text: ' *',
+                style: TextStyle(color: Color(0xFFDC2626)),
+              ),
             ],
           ),
           style: const TextStyle(
@@ -945,7 +960,9 @@ class _FieldState extends State<_Field> {
                 ? IconButton(
                     onPressed: () => setState(() => _hidden = !_hidden),
                     icon: Icon(
-                      _hidden ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                      _hidden
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
                       size: 19,
                       color: OE.muted,
                     ),

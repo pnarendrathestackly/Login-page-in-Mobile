@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.example.stackly_auth"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "30.0.16138531" // ponytail: pin to installed NDK; flutter.ndkVersion triggers a crashing sdkmanager auto-install
+    ndkVersion = "30.0.16248370" // ponytail: pin to installed NDK; flutter.ndkVersion triggers a crashing sdkmanager auto-install
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

@@ -260,10 +260,12 @@ class _LoginFormState extends State<LoginForm> {
 
     return Form(
       key: _formKey,
+      // Keyed by step so each step assembles afresh, in reading order.
       child: Column(
+        key: ValueKey(step),
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+        children: staggerIn([
           if (step > 0) ...[
             Align(
               alignment: Alignment.centerLeft,
@@ -372,7 +374,7 @@ class _LoginFormState extends State<LoginForm> {
                 ),
               ],
             ),
-        ],
+        ]),
       ),
     );
   }
@@ -946,7 +948,8 @@ class _SignedIn extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
+          PopIn(
+              child: Container(
             width: 56,
             height: 56,
             alignment: Alignment.center,
@@ -959,21 +962,26 @@ class _SignedIn extends StatelessWidget {
               size: 28,
               color: Color(0xFF2E9E5B),
             ),
-          ),
+          )),
           const SizedBox(height: 26),
-          const Text(
-            "You're in",
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -.5,
-              color: OE.ink,
-            ),
-          ),
+          FadeIn(
+              delay: Motion.stagger * 3,
+              child: const Text(
+                "You're in",
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -.5,
+                  color: OE.ink,
+                ),
+              )),
           const SizedBox(height: 10),
-          const Text(
-            'Redirecting to your dashboard...',
-            style: TextStyle(fontSize: 15, color: OE.muted),
+          FadeIn(
+            delay: Motion.stagger * 5,
+            child: const Text(
+              'Redirecting to your dashboard...',
+              style: TextStyle(fontSize: 15, color: OE.muted),
+            ),
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../motion.dart';
 import '../../../../../widgets/sidebar/app_sidebar.dart' show StacklyLogo;
 import '../login_screen.dart' show OE;
 
@@ -16,7 +17,8 @@ class BrandHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: const Color(0xFF05060F),
-      child: SafeArea(
+      child: AmbientGlow(
+          child: SafeArea(
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
@@ -24,42 +26,49 @@ class BrandHeader extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const StacklyLogo(),
+              const FadeIn(child: StacklyLogo()),
               const Spacer(),
-              Text(
-                'CLOUD PLATFORM  ·  HRMS  ·  CRM  ·  ERP  ·  FINANCE  ·  AI',
-                style: OE.mono.copyWith(
-                  fontSize: 10.5,
-                  letterSpacing: 2,
-                  height: 1.9,
-                  color: Colors.white.withValues(alpha: .45),
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(text: 'One identity.\n'),
-                    TextSpan(
-                      text: 'Infinite ',
-                      style: TextStyle(color: Color(0xFF4C7DFF)),
+              FadeIn(
+                  delay: Motion.stagger * 2,
+                  duration: Motion.complex,
+                  child: Text(
+                    'CLOUD PLATFORM  ·  HRMS  ·  CRM  ·  ERP  ·  FINANCE  ·  AI',
+                    style: OE.mono.copyWith(
+                      fontSize: 10.5,
+                      letterSpacing: 2,
+                      height: 1.9,
+                      color: Colors.white.withValues(alpha: .45),
                     ),
-                    TextSpan(text: 'Potential.'),
-                  ],
-                ),
-                style: TextStyle(
-                  fontSize: 40,
-                  height: 1.25,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -.5,
-                  color: Colors.white,
-                ),
-              ),
+                  )),
+              const SizedBox(height: 14),
+              FadeIn(
+                  delay: Motion.stagger * 4,
+                  duration: Motion.complex,
+                  offset: 14,
+                  child: const Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(text: 'One identity.\n'),
+                        TextSpan(
+                          text: 'Infinite ',
+                          style: TextStyle(color: Color(0xFF4C7DFF)),
+                        ),
+                        TextSpan(text: 'Potential.'),
+                      ],
+                    ),
+                    style: TextStyle(
+                      fontSize: 40,
+                      height: 1.25,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -.5,
+                      color: Colors.white,
+                    ),
+                  )),
               const Spacer(flex: 2),
             ],
           ),
         ),
-      ),
+      )),
     );
   }
 }
@@ -74,13 +83,14 @@ class _PhoneHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: Colors.black,
-      child: SafeArea(
+      child: AmbientGlow(
+          child: SafeArea(
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(22, 25.5, 22, 30),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            children: staggerIn([
               Image.asset(
                 'assets/stackly_logo.png',
                 height: 32,
@@ -129,10 +139,10 @@ class _PhoneHeader extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
+            ]),
           ),
         ),
-      ),
+      )),
     );
   }
 }

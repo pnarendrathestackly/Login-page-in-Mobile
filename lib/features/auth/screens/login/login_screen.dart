@@ -48,29 +48,50 @@ class _LoginScreenState extends State<LoginScreen> {
     final pad = MediaQuery.sizeOf(context).height < 900 ? 12.0 : 24.0;
 
     if (narrow) {
-      if (!_showForm) return _Splash(onSignIn: () => setState(_show));
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: ScrollConfiguration(
-          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const BrandHeader(),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 27, 18, 32),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 532),
-                      child: const LoginForm(compact: true),
+      // Splash to form is a page-level change: cross-fade with a small rise
+      // rather than a hard cut.
+      return AnimatedSwitcher(
+        duration: Motion.duration(context, Motion.page),
+        switchInCurve: Motion.enter,
+        switchOutCurve: Motion.exit,
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween(begin: const Offset(0, .03), end: Offset.zero)
+                .animate(animation),
+            child: child,
+          ),
+        ),
+        child: _showForm
+            ? Scaffold(
+                key: const ValueKey('form'),
+                backgroundColor: Colors.white,
+                body: ScrollConfiguration(
+                  behavior: ScrollConfiguration.of(context)
+                      .copyWith(scrollbars: false),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const BrandHeader(),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(18, 27, 18, 32),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 532),
+                              child: const LoginForm(compact: true),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
+              )
+            : _Splash(
+                key: const ValueKey('splash'),
+                onSignIn: () => setState(_show),
+              ),
       );
     }
 
@@ -116,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
 /// header stays at the top, the button and footer at the bottom, and the art
 /// centres between them, so a phone taller than the mock has no empty band.
 class _Splash extends StatelessWidget {
-  const _Splash({required this.onSignIn});
+  const _Splash({super.key, required this.onSignIn});
 
   final VoidCallback onSignIn;
 
@@ -192,57 +213,63 @@ class _SplashArtboard extends StatelessWidget {
           Positioned(
             left: 23.6,
             top: 27.9,
-            child: Image.asset(
-              'assets/stackly_logo.png',
-              height: 34.9,
-              filterQuality: FilterQuality.medium,
-              semanticLabel: 'Stackly',
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-            ),
+            child: _in(
+                0,
+                Image.asset(
+                  'assets/stackly_logo.png',
+                  height: 34.9,
+                  filterQuality: FilterQuality.medium,
+                  semanticLabel: 'Stackly',
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                )),
           ),
           Positioned(
             left: 24,
             top: 79,
-            child: Text(
-              // Broken by hand where the mock breaks it, so the wrap does not
-              // depend on which monospace font the platform substitutes.
-              'CLOUD PLATFORM  ·  HRMS  ·  CRM  ·  ERP  ·\nFINANCE  ·  AI',
-              style: OE.mono.copyWith(
-                fontSize: 9.5,
-                letterSpacing: 1.95,
-                height: 12 / 9.5,
-                color: _grey,
-              ),
-            ),
+            child: _in(
+                0,
+                Text(
+                  // Broken by hand where the mock breaks it, so the wrap does not
+                  // depend on which monospace font the platform substitutes.
+                  'CLOUD PLATFORM  ·  HRMS  ·  CRM  ·  ERP  ·\nFINANCE  ·  AI',
+                  style: OE.mono.copyWith(
+                    fontSize: 9.5,
+                    letterSpacing: 1.95,
+                    height: 12 / 9.5,
+                    color: _grey,
+                  ),
+                )),
           ),
-          const Positioned(
+          Positioned(
             left: 25.5,
             top: _headlineTop,
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(text: 'One identity.\n'),
+            child: _in(
+                1,
+                const Text.rich(
                   TextSpan(
-                    text: 'Infinite ',
-                    style:
-                        TextStyle(color: Color(0xFF4F7FF1), letterSpacing: .3),
+                    children: [
+                      TextSpan(text: 'One identity.\n'),
+                      TextSpan(
+                        text: 'Infinite ',
+                        style: TextStyle(
+                            color: Color(0xFF4F7FF1), letterSpacing: .3),
+                      ),
+                      TextSpan(
+                        text: 'Potential.',
+                        style: TextStyle(letterSpacing: .3),
+                      ),
+                    ],
                   ),
-                  TextSpan(
-                    text: 'Potential.',
-                    style: TextStyle(letterSpacing: .3),
+                  style: TextStyle(
+                    fontSize: _headlineSize,
+                    height: 30 / 27,
+                    fontWeight: FontWeight.w700,
+                    // Roboto's proportions differ from the mock's face, so each
+                    // line's spacing is set to match that line's measured width.
+                    letterSpacing: 1,
+                    color: Colors.white,
                   ),
-                ],
-              ),
-              style: TextStyle(
-                fontSize: _headlineSize,
-                height: 30 / 27,
-                fontWeight: FontWeight.w700,
-                // Roboto's proportions differ from the mock's face, so each
-                // line's spacing is set to match that line's measured width.
-                letterSpacing: 1,
-                color: Colors.white,
-              ),
-            ),
+                )),
           ),
           Positioned(
             left: 0,
@@ -255,49 +282,7 @@ class _SplashArtboard extends StatelessWidget {
                 hub.dx / _Splash._w * 2 - 1,
                 hub.dy / _Splash._h * 2 - 1,
               ),
-              child: Stack(
-                children: [
-                  const Positioned.fill(
-                      child: CustomPaint(painter: _SplashHubPainter())),
-                  for (final c in _SplashHubPainter.cards)
-                    Positioned.fromRect(
-                      rect: c.rect,
-                      child: _ModuleCard(c.icon, c.title, c.subtitle),
-                    ),
-                  Positioned(
-                    left: _SplashHubPainter.hub.dx - 21.75,
-                    top: _SplashHubPainter.hub.dy - 21.75,
-                    child: Container(
-                      width: 43.5,
-                      height: 43.5,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(11),
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF5E8BDC), Color(0xFF2C4C9C)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                const Color(0xFF3F6FE0).withValues(alpha: .45),
-                            blurRadius: 18,
-                          ),
-                        ],
-                      ),
-                      child: const Text(
-                        '1E',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              child: _in(2, const _SplashArt()),
             ),
           ),
           Positioned(
@@ -305,25 +290,27 @@ class _SplashArtboard extends StatelessWidget {
             right: 65.2,
             bottom: _buttonBottom,
             height: 48,
-            child: FilledButton(
-              onPressed: onSignIn,
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF142CD7),
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.zero,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'SIGN IN',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ),
+            child: _in(
+                3,
+                FilledButton(
+                  onPressed: onSignIn,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF142CD7),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'SIGN IN',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                )),
           ),
           for (final (x, word) in const [
             (25.2, 'Secure'),
@@ -333,14 +320,114 @@ class _SplashArtboard extends StatelessWidget {
             Positioned(
               left: x,
               bottom: 31.5,
-              child: Text(
-                word,
-                style: const TextStyle(fontSize: 11.4, height: 1, color: _grey),
+              child: _in(
+                4,
+                Text(
+                  word,
+                  style:
+                      const TextStyle(fontSize: 11.4, height: 1, color: _grey),
+                ),
               ),
             ),
         ],
       );
     });
+  }
+}
+
+/// The splash's hub diagram: ring, spokes, module cards and the hub tile,
+/// kept alive by one slow loop. Signals run up each spoke into the hub, a
+/// light sweeps the ring, and the cards drift. Under reduced motion (and in
+/// tests, via [Motion.ambient]) it holds still on the original static art.
+class _SplashArt extends StatefulWidget {
+  const _SplashArt();
+
+  @override
+  State<_SplashArt> createState() => _SplashArtState();
+}
+
+class _SplashArtState extends State<_SplashArt>
+    with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 4000),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (Motion.reduced(context) || !Motion.ambient) {
+      _c.stop();
+    } else if (!_c.isAnimating) {
+      _c.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final live = _c.isAnimating;
+    const hub = _SplashHubPainter.hub;
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: CustomPaint(painter: _SplashHubPainter(_c, live: live)),
+        ),
+        for (final (i, c) in _SplashHubPainter.cards.indexed)
+          Positioned.fromRect(
+            rect: c.rect,
+            child: AnimatedBuilder(
+              animation: _c,
+              // Each card a quarter-cycle behind the last, so they drift
+              // independently rather than as one block.
+              builder: (context, child) => Transform.translate(
+                offset: Offset(
+                  0,
+                  live ? 2.5 * math.sin((_c.value + i / 4) * 2 * math.pi) : 0,
+                ),
+                child: child,
+              ),
+              child: _ModuleCard(c.icon, c.title, c.subtitle),
+            ),
+          ),
+        Positioned(
+          left: hub.dx - 21.75,
+          top: hub.dy - 21.75,
+          child: Container(
+            width: 43.5,
+            height: 43.5,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(11),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF5E8BDC), Color(0xFF2C4C9C)],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF3F6FE0).withValues(alpha: .45),
+                  blurRadius: 18,
+                ),
+              ],
+            ),
+            child: const Text(
+              '1E',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -414,9 +501,15 @@ class _ModuleCard extends StatelessWidget {
 typedef _Card = ({Rect rect, IconData icon, String title, String subtitle});
 
 /// The ring, and the spokes from the hub to each card's inner corner. The
-/// cards and the hub tile are painted over it.
+/// cards and the hub tile are painted over it. When [live], [t] also drives a
+/// breathing glow and ripple at the hub, a light sweeping the ring, and a
+/// signal travelling each spoke.
 class _SplashHubPainter extends CustomPainter {
-  const _SplashHubPainter();
+  _SplashHubPainter(this.t, {required this.live}) : super(repaint: t);
+
+  /// Loop progress, 0..1.
+  final Animation<double> t;
+  final bool live;
 
   static const hub = Offset(194.8, 327.9);
 
@@ -454,27 +547,91 @@ class _SplashHubPainter extends CustomPainter {
       ..strokeWidth = 1.5
       ..color = const Color(0xFF3A4668);
     final r = [for (final c in cards) c.rect];
-    for (final corner in [
+    final corners = [
       r[0].bottomRight,
       r[1].bottomLeft,
       r[2].topRight,
       r[3].topLeft,
-    ]) {
+    ];
+    for (final corner in corners) {
       canvas.drawLine(hub, corner, spoke);
     }
 
+    const ringR = 109.1;
     canvas.drawCircle(
       hub,
-      109.1,
+      ringR,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.2
         ..color = const Color(0xFF375AA8),
     );
+    if (!live) return;
+
+    final v = t.value;
+
+    // A light sweeping the ring once per loop: short arcs brightening toward
+    // the head, so it reads as a comet with a tail.
+    const tail = 14;
+    const step = math.pi / 72; // 2.5 degrees per segment
+    final head = v * 2 * math.pi - math.pi / 2;
+    final ringRect = Rect.fromCircle(center: hub, radius: ringR);
+    for (var i = 0; i < tail; i++) {
+      final k = (i + 1) / tail;
+      canvas.drawArc(
+        ringRect,
+        head - (tail - i) * step,
+        step,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.6
+          ..strokeCap = StrokeCap.round
+          ..color = const Color(0xFF8FB4FF).withValues(alpha: .9 * k * k),
+      );
+    }
+
+    // Hub: a breathing glow behind the tile, and a ripple leaving it.
+    final breath = (math.sin(v * 2 * math.pi) + 1) / 2;
+    canvas.drawCircle(
+      hub,
+      34 + 6 * breath,
+      Paint()
+        ..color = const Color(0xFF3F6FE0).withValues(alpha: .12 + .14 * breath)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+    );
+    final ripple = (v * 2) % 1; // two ripples per loop
+    canvas.drawCircle(
+      hub,
+      24 + 46 * ripple,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2
+        ..color = const Color(0xFF5E8BDC).withValues(alpha: .55 * (1 - ripple)),
+    );
+
+    // A signal from each card into the hub, a quarter-loop apart.
+    for (var i = 0; i < corners.length; i++) {
+      final p = (v + i / corners.length) % 1;
+      final at = Offset.lerp(corners[i], hub, Motion.enter.transform(p))!;
+      final fade = math.sin(p * math.pi); // appear and vanish at the ends
+      canvas.drawCircle(
+        at,
+        6,
+        Paint()
+          ..color = const Color(0xFF7FA6F5).withValues(alpha: .3 * fade)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
+      canvas.drawCircle(
+        at,
+        2.2,
+        Paint()..color = const Color(0xFFCFE0FF).withValues(alpha: fade),
+      );
+    }
   }
 
   @override
-  bool shouldRepaint(_SplashHubPainter old) => false;
+  bool shouldRepaint(_SplashHubPainter old) => old.t != t || old.live != live;
 }
 
 class _BrandPanel extends StatelessWidget {

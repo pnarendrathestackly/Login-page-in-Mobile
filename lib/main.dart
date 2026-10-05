@@ -56,7 +56,7 @@ class _StacklyAppState extends State<StacklyApp> {
         ChangeNotifierProvider<NavigationProvider>.value(value: _navigation),
       ],
       child: MaterialApp.router(
-        title: 'TheStackly',
+        title: 'OneCloud',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         routerDelegate: _router,

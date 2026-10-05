@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../motion.dart';
 import '../login/login_screen.dart' show OE;
 
 /// The centred icon-and-message layout the auth outcome screens share:
@@ -34,15 +35,17 @@ class AuthStatusPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+      children: staggerIn([
         const SizedBox(height: 18),
         Center(
-          child: Container(
-            width: 62,
-            height: 62,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: tint),
-            child: Icon(icon, size: 27, color: iconColor),
+          child: PopIn(
+            child: Container(
+              width: 62,
+              height: 62,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: tint),
+              child: Icon(icon, size: 27, color: iconColor),
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -77,14 +80,15 @@ class AuthStatusPanel extends StatelessWidget {
           const SizedBox(height: 40),
           footer!,
         ],
-      ],
+      ]),
     );
   }
 }
 
 /// Filled dark button, the primary action on these screens.
 class AuthPrimaryButton extends StatelessWidget {
-  const AuthPrimaryButton({super.key, required this.label, required this.onTap});
+  const AuthPrimaryButton(
+      {super.key, required this.label, required this.onTap});
 
   final String label;
   final VoidCallback? onTap;
@@ -98,8 +102,7 @@ class AuthPrimaryButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: OE.button,
           disabledBackgroundColor: OE.button.withValues(alpha: .55),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         child: Text(
           label,
@@ -130,8 +133,7 @@ class AuthSecondaryButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: OE.ink,
           side: const BorderSide(color: OE.border),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         child: Text(
           label,
