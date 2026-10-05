@@ -207,13 +207,11 @@ void main() {
     await step(tester);
     expect(app.router.location, '/admin/users');
 
-    await tester.tap(find.text('Settings').first);
+    await tester.tap(find.text('CRM'));
     await step(tester);
-    expect(app.router.location, AppRoutes.settings);
-    expect(
-      find.text('Manage your workspace, account and security preferences.'),
-      findsOneWidget,
-    );
+    await tester.tap(find.text('Leads').first);
+    await step(tester);
+    expect(app.router.location, '/crm/leads');
   });
 
   testWidgets('an authenticated user sent to /login lands on the dashboard',

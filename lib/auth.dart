@@ -272,22 +272,27 @@ class DemoAuthBackend implements AuthBackend {
     }
     if (handle != null && handle.isNotEmpty) _usernames[normalized] = handle;
 
+    final ws = workspace?.trim() ?? '';
+    final slug = _slug(ws.isNotEmpty ? ws : org);
+    final tenant = slug.isEmpty
+        ? _demoTenant
+        : Tenant(id: 'tnt_$slug', name: org.isEmpty ? ws : org, slug: slug);
+    _tenants[normalized] = tenant;
+
     return AuthUser(
       name: name.trim(),
       email: normalized,
       role: role.label,
-      tenant: org.isEmpty
-          ? _demoTenant
-          : Tenant(
-              id: 'tnt_${_slug(workspace?.trim().isNotEmpty == true ? workspace! : org)}',
-              name: org,
-              slug: _slug(
-                workspace?.trim().isNotEmpty == true ? workspace! : org,
-              ),
-            ),
+      tenant: tenant,
       roles: [role],
     );
   }
+
+  /// The workspace each registered account signs in under. Seeded accounts
+  /// are absent and fall back to [_demoTenant].
+  final Map<String, Tenant> _tenants = {};
+
+  Tenant _tenantFor(String email) => _tenants[email] ?? _demoTenant;
 
   /// "ABC Technologies Pvt Ltd" -> "abctechnologiespvtltd", the workspace
   /// slug a new organization signs in under.
@@ -362,7 +367,7 @@ class DemoAuthBackend implements AuthBackend {
       name: record.name,
       email: normalized,
       role: record.role.label,
-      tenant: _demoTenant,
+      tenant: _tenantFor(normalized),
       roles: [record.role],
     );
     await sendCode(normalized);
@@ -443,7 +448,8 @@ class DemoAuthBackend implements AuthBackend {
   @override
   Future<bool> workspaceExists(String slug) async {
     await Future<void>.delayed(latency);
-    return slug.trim().toLowerCase() == _demoTenant.slug;
+    final s = slug.trim().toLowerCase();
+    return s == _demoTenant.slug || _tenants.values.any((t) => t.slug == s);
   }
 
   // SECURITY: answering with the workspace reveals which emails have accounts.
@@ -452,9 +458,8 @@ class DemoAuthBackend implements AuthBackend {
   @override
   Future<String?> findWorkspace(String email) async {
     await Future<void>.delayed(latency);
-    return _users.containsKey(email.trim().toLowerCase())
-        ? _demoTenant.slug
-        : null;
+    final key = email.trim().toLowerCase();
+    return _users.containsKey(key) ? _tenantFor(key).slug : null;
   }
 
   @override
@@ -523,6 +528,7 @@ class DemoAuthBackend implements AuthBackend {
       throw const AuthException('That account no longer exists.');
     }
     _deactivated.remove(key);
+    _tenants.remove(key);
   }
 }
 

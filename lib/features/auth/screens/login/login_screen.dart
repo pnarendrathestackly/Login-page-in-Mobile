@@ -59,11 +59,11 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const BrandHeader(),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+                  padding: const EdgeInsets.fromLTRB(18, 27, 18, 32),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 532),
-                      child: const LoginForm(),
+                      child: const LoginForm(compact: true),
                     ),
                   ),
                 ),

@@ -293,12 +293,11 @@ void main() {
       expect(router.location, AppRoutes.reports);
     });
 
-    testWidgets('Global Dashboard in the sidebar opens its page',
-        (tester) async {
+    testWidgets('the Global Dashboard page renders', (tester) async {
       await signedIn(tester, email: 'me@stackly.com');
-      await tester.tap(find.text('Global Dashboard').first);
-      await step(tester);
       final router = tester.state<TestAppState>(find.byType(TestApp)).router;
+      router.go('/admin/global');
+      await step(tester);
       expect(router.location, '/admin/global');
       expect(find.text('Recent activities'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -307,6 +306,8 @@ void main() {
     group('platform configuration', () {
       Future<void> open(WidgetTester tester) async {
         await signedIn(tester, email: 'me@stackly.com');
+        await tester.tap(find.text('PLATFORM ADMINISTRATION'));
+        await step(tester);
         await tester.tap(find.text('Platform Configuration').first);
         await step(tester);
       }
@@ -362,7 +363,10 @@ void main() {
 
       Future<void> open(WidgetTester tester) async {
         await signedIn(tester, email: 'me@stackly.com');
-        await tester.tap(find.text('Platform Branding').first);
+        tester
+            .state<TestAppState>(find.byType(TestApp))
+            .router
+            .go('/admin/branding');
         await step(tester);
       }
 
@@ -397,6 +401,8 @@ void main() {
 
       Future<void> open(WidgetTester tester) async {
         await signedIn(tester, email: 'me@stackly.com');
+        await tester.tap(find.text('PLATFORM ADMINISTRATION'));
+        await step(tester);
         await tester.tap(find.text('Feature Management').first);
         await step(tester);
       }
@@ -531,9 +537,11 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('Platform Administration opens its overview', (tester) async {
+    testWidgets('the admin overview renders', (tester) async {
       await signedIn(tester, email: 'me@stackly.com');
-      await tester.tap(find.text('Platform Administration').first);
+      tester.state<TestAppState>(find.byType(TestApp)).router.go(
+            '/admin/overview',
+          );
       await step(tester);
       expect(find.text('PLATFORM UPTIME'), findsOneWidget);
       expect(find.text('Platform Health Overview'), findsOneWidget);
@@ -557,7 +565,8 @@ void main() {
             );
         await step(tester);
         expect(find.text('Platform Health Status'), findsOneWidget);
-        expect(find.text('System Health'), findsOneWidget);
+        // The page, plus the rail's expanded admin service when it is docked.
+        expect(find.text('System Health'), findsWidgets);
         expect(tester.takeException(), isNull);
         tester.state<TestAppState>(find.byType(TestApp)).router.go(
               '/admin/settings',

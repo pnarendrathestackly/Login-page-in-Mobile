@@ -18,7 +18,11 @@ import 'login_otp_field.dart';
 /// verify (OTP). Steps 1-2 are local; step 3 is simply "the backend is
 /// awaiting a code", so it is read from [AuthProvider] rather than tracked here.
 class LoginForm extends StatefulWidget {
-  const LoginForm({super.key});
+  const LoginForm({super.key, this.compact = false});
+
+  /// Phone layout under the brand header: the smaller type and tighter
+  /// spacing of the phone sign-in mock. Desktop keeps the full-size form.
+  final bool compact;
 
   @override
   State<LoginForm> createState() => _LoginFormState();
@@ -52,6 +56,11 @@ class _LoginFormState extends State<LoginForm> {
   /// rather than make the user scroll to the button.
   bool _tight = false;
   double _gap(double v) => _tight ? (v * .55).roundToDouble() : v;
+
+  bool get _compact => widget.compact;
+
+  /// [desktop] spacing, or the [phone] spacing measured off the phone mock.
+  double _g(double desktop, double phone) => _compact ? phone : _gap(desktop);
   String _code = '';
 
   @override
@@ -66,7 +75,8 @@ class _LoginFormState extends State<LoginForm> {
   Duration get _codeRemaining {
     final issued = _codeIssuedAt;
     if (issued == null) return Duration.zero;
-    final left = DemoAuthBackend.codeLifetime - DateTime.now().difference(issued);
+    final left =
+        DemoAuthBackend.codeLifetime - DateTime.now().difference(issued);
     return left.isNegative ? Duration.zero : left;
   }
 
@@ -204,9 +214,11 @@ class _LoginFormState extends State<LoginForm> {
     final step = auth.status == AuthStatus.awaitingVerification ? 2 : _step;
 
     const stepNames = ['IDENTIFY', 'PASSWORD', 'VERIFY'];
-    const subtitleStyle = TextStyle(fontSize: 15.5, color: OE.body);
+    final subtitleStyle = _compact
+        ? const TextStyle(fontSize: 15, height: 1.45, color: OE.body)
+        : const TextStyle(fontSize: 15.5, color: OE.body);
     final subtitle = switch (step) {
-      0 => const Text(
+      0 => Text(
           'Enter your workspace and work email to continue.',
           style: subtitleStyle,
         ),
@@ -226,7 +238,7 @@ class _LoginFormState extends State<LoginForm> {
           ),
           style: subtitleStyle,
         ),
-      _ => const Text(
+      _ => Text(
           'Enter the 6-digit code from your authenticator app.',
           style: subtitleStyle,
         ),
@@ -257,14 +269,14 @@ class _LoginFormState extends State<LoginForm> {
               alignment: Alignment.centerLeft,
               child: _Back(onTap: busy ? null : _restart),
             ),
-            SizedBox(height: _gap(26)),
+            SizedBox(height: _g(26, 18)),
           ],
           Text(
             'STEP ${step + 1} OF 3 · ${stepNames[step]}',
             style: OE.mono.copyWith(
-              fontSize: 12.5,
-              letterSpacing: 2.4,
-              color: OE.muted,
+              fontSize: _compact ? 10.5 : 12.5,
+              letterSpacing: _compact ? 2 : 2.4,
+              color: _compact ? OE.hint : OE.muted,
             ),
           ),
           const SizedBox(height: 12),
@@ -274,14 +286,14 @@ class _LoginFormState extends State<LoginForm> {
               2 => 'Two-factor verification',
               _ => 'Sign in',
             },
-            style: const TextStyle(
-              fontSize: 30,
+            style: TextStyle(
+              fontSize: _compact ? 24 : 30,
               fontWeight: FontWeight.w600,
               letterSpacing: -.5,
               color: OE.ink,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: _compact ? 8 : 10),
           subtitle,
           ExpandFade(
             visible: auth.error != null,
@@ -301,15 +313,20 @@ class _LoginFormState extends State<LoginForm> {
               child: AuthMessage(text: auth.notice ?? '', isError: false),
             ),
           ),
-          SizedBox(height: _gap(38)),
+          SizedBox(height: _g(38, 26)),
           ...switch (step) {
             0 => _identifyStep(MediaQuery.sizeOf(context).width >= 600),
             1 => _passwordStep(busy, auth.error != null),
             _ => _verifyStep(auth),
           },
-          SizedBox(height: _gap(32)),
-          const Divider(height: 1, color: OE.border),
-          SizedBox(height: _gap(24)),
+          // The phone mock has no rule above the footer, just space.
+          if (_compact)
+            const SizedBox(height: 22)
+          else ...[
+            SizedBox(height: _gap(32)),
+            const Divider(height: 1, color: OE.border),
+            SizedBox(height: _gap(24)),
+          ],
           if (step == 1)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 40),
@@ -339,13 +356,17 @@ class _LoginFormState extends State<LoginForm> {
             Wrap(
               alignment: WrapAlignment.center,
               children: [
-                const Text(
+                Text(
                   'New to One Enterprise? ',
-                  style: TextStyle(fontSize: 14.5, color: OE.body),
+                  style: TextStyle(
+                    fontSize: _compact ? 13.5 : 14.5,
+                    color: OE.body,
+                  ),
                 ),
                 _Link(
-                  'Talk to sales',
-                  fontSize: 14.5,
+                  _compact ? 'Create an account' : 'Talk to sales',
+                  fontSize: _compact ? 13.5 : 14.5,
+                  color: _compact ? _phoneLink : OE.link,
                   // Routing is centralized: this reports intent only.
                   onTap: busy ? null : () => context.go(AppRoutes.register),
                 ),
@@ -356,8 +377,12 @@ class _LoginFormState extends State<LoginForm> {
     );
   }
 
+  /// The phone mock's links are a brighter blue than the desktop's navy.
+  static const _phoneLink = Color(0xFF3E5FD9);
+
   List<Widget> _identifyStep(bool wide) => [
         _Field(
+          compact: _compact,
           label: 'Workspace',
           controller: _workspace,
           hint: 'your-workspace',
@@ -372,13 +397,19 @@ class _LoginFormState extends State<LoginForm> {
           children: [
             const Text(
               "Don't know your workspace? ",
-              style: TextStyle(fontSize: 13, color: OE.body),
+              style: TextStyle(fontSize: 13, color: OE.muted),
             ),
-            _Link('Find it here', fontSize: 13, onTap: _findWorkspace),
+            _Link(
+              'Find it here',
+              fontSize: 13,
+              color: _compact ? _phoneLink : OE.link,
+              onTap: _findWorkspace,
+            ),
           ],
         ),
-        SizedBox(height: _gap(22)),
+        SizedBox(height: _g(22, 18)),
         _Field(
+          compact: _compact,
           label: 'Work email',
           controller: _email,
           hint:
@@ -387,13 +418,14 @@ class _LoginFormState extends State<LoginForm> {
           validator: emailValidator,
           onSubmitted: _identify,
         ),
-        SizedBox(height: _gap(20)),
+        SizedBox(height: _g(20, 18)),
         _PrimaryButton(
           'Continue',
+          height: _compact ? 46 : 52,
           loading: context.watch<AuthProvider>().busy,
           onTap: context.watch<AuthProvider>().busy ? null : _identify,
         ),
-        SizedBox(height: _gap(26)),
+        SizedBox(height: _g(26, 22)),
         Row(
           children: [
             if (wide) const SizedBox(width: 37),
@@ -402,27 +434,30 @@ class _LoginFormState extends State<LoginForm> {
               padding: EdgeInsets.symmetric(horizontal: 14),
               child: Text(
                 'or continue with',
-                style: TextStyle(fontSize: 13.5, color: OE.muted),
+                style: TextStyle(fontSize: 12.5, color: OE.hint),
               ),
             ),
             const Expanded(child: Divider(color: OE.border)),
             if (wide) const SizedBox(width: 37),
           ],
         ),
-        SizedBox(height: _gap(24)),
+        SizedBox(height: _g(24, 20)),
         _SocialButton(
           'Google',
           Image.asset('assets/google logo.png', width: 18, height: 18),
+          compact: _compact,
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: _compact ? 9 : 10),
         _SocialButton(
           'Microsoft',
-          Image.asset('assets/Microsoft-logo .png', width: 18, height: 18),
+          const _MicrosoftMark(),
+          compact: _compact,
         ),
-        const SizedBox(height: 10),
-        const _SocialButton(
-          'Company SSO (SAML)',
-          Icon(Icons.people_outline, size: 20, color: OE.ink),
+        SizedBox(height: _compact ? 9 : 10),
+        _SocialButton(
+          _compact ? 'Company SSO' : 'Company SSO (SAML)',
+          const Icon(Icons.people_outline, size: 20, color: OE.ink),
+          compact: _compact,
         ),
       ];
 
@@ -513,6 +548,7 @@ class _LoginFormState extends State<LoginForm> {
 /// (".oneenterprise.io") inside the border.
 class _Field extends StatefulWidget {
   const _Field({
+    this.compact = false,
     required this.label,
     required this.controller,
     required this.hint,
@@ -524,6 +560,7 @@ class _Field extends StatefulWidget {
     this.hasError = false,
   });
 
+  final bool compact;
   final String label;
   final TextEditingController controller;
   final String hint;
@@ -553,17 +590,24 @@ class _FieldState extends State<_Field> {
   Widget build(BuildContext context) {
     Widget? suffix;
     if (widget.suffix != null) {
+      // Sized to its text. An aligned Container would expand to the whole
+      // width the decorator offers and squeeze the input itself to nothing.
       suffix = Container(
         height: 48,
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        alignment: Alignment.center,
+        padding: EdgeInsets.symmetric(horizontal: widget.compact ? 12 : 15),
         decoration: const BoxDecoration(
           color: OE.fill,
           borderRadius: BorderRadius.horizontal(right: Radius.circular(7)),
         ),
-        child: Text(
-          widget.suffix!,
-          style: OE.mono.copyWith(fontSize: 14, color: OE.muted),
+        child: Center(
+          widthFactor: 1,
+          child: Text(
+            widget.suffix!,
+            style: OE.mono.copyWith(
+              fontSize: widget.compact ? 12 : 14,
+              color: OE.muted,
+            ),
+          ),
         ),
       );
     } else if (widget.obscure) {
@@ -583,8 +627,8 @@ class _FieldState extends State<_Field> {
       children: [
         Text(
           widget.label,
-          style: const TextStyle(
-            fontSize: 14.5,
+          style: TextStyle(
+            fontSize: widget.compact ? 13 : 14.5,
             fontWeight: FontWeight.w600,
             color: OE.ink,
           ),
@@ -602,17 +646,17 @@ class _FieldState extends State<_Field> {
             hintText: widget.hint,
             hintStyle: const TextStyle(fontSize: 16, color: OE.hint),
             isDense: true,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 17,
+              vertical: widget.compact ? 14 : 15,
+            ),
             suffixIcon: suffix,
             suffixIconConstraints: const BoxConstraints(minHeight: 48),
             filled: true,
             fillColor: Colors.white,
             border: _border(OE.border),
-            enabledBorder:
-                _border(widget.hasError ? OE.danger : OE.border),
-            focusedBorder:
-                _border(widget.hasError ? OE.danger : OE.button),
+            enabledBorder: _border(widget.hasError ? OE.danger : OE.border),
+            focusedBorder: _border(widget.hasError ? OE.danger : OE.button),
             errorBorder: _border(OE.danger),
             focusedErrorBorder: _border(OE.danger),
           ),
@@ -623,16 +667,22 @@ class _FieldState extends State<_Field> {
 }
 
 class _PrimaryButton extends StatelessWidget {
-  const _PrimaryButton(this.label, {required this.onTap, this.loading = false});
+  const _PrimaryButton(
+    this.label, {
+    required this.onTap,
+    this.loading = false,
+    this.height = 52,
+  });
 
   final String label;
+  final double height;
   final VoidCallback? onTap;
   final bool loading;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 52,
+      height: height,
       child: FilledButton(
         onPressed: onTap,
         style: FilledButton.styleFrom(
@@ -661,15 +711,20 @@ class _PrimaryButton extends StatelessWidget {
 }
 
 class _SocialButton extends StatelessWidget {
-  const _SocialButton(this.label, this.icon);
+  const _SocialButton(this.label, this.icon, {this.compact = false});
 
   final String label;
   final Widget icon;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: MediaQuery.sizeOf(context).height < 900 ? 42 : 48,
+      height: compact
+          ? 44
+          : MediaQuery.sizeOf(context).height < 900
+              ? 42
+              : 48,
       child: OutlinedButton(
         // No identity provider is configured for this workspace (the backend
         // has no OAuth/SAML integration), so say so rather than do nothing.
@@ -693,8 +748,8 @@ class _SocialButton extends StatelessWidget {
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 16,
+                style: TextStyle(
+                  fontSize: compact ? 15 : 16,
                   fontWeight: FontWeight.w500,
                   color: OE.ink,
                 ),
@@ -702,6 +757,30 @@ class _SocialButton extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Microsoft's four-square mark. The bundled asset carries the wordmark too,
+/// which shrinks to an unreadable smudge at icon size.
+class _MicrosoftMark extends StatelessWidget {
+  const _MicrosoftMark();
+
+  @override
+  Widget build(BuildContext context) {
+    Widget sq(int c) => Container(width: 8, height: 8, color: Color(c));
+    return SizedBox.square(
+      dimension: 17,
+      child: Wrap(
+        spacing: 1,
+        runSpacing: 1,
+        children: [
+          sq(0xFFF25022),
+          sq(0xFF7FBA00),
+          sq(0xFF00A4EF),
+          sq(0xFFFFB900),
+        ],
       ),
     );
   }

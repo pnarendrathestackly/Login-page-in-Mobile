@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stackly_auth/auth.dart';
-import 'package:stackly_auth/core/platform/modules.dart';
 import 'package:stackly_auth/providers/auth_provider.dart';
 import 'package:stackly_auth/router/app_router.dart';
+import 'package:stackly_auth/widgets/sidebar/app_sidebar.dart';
 
 import 'test_app.dart';
 
@@ -98,15 +98,15 @@ void main() {
     expect(find.text('CRM'), findsNothing);
   });
 
-  testWidgets('a super admin sees every module in the sidebar', (tester) async {
+  testWidgets('a super admin sees every service in the sidebar',
+      (tester) async {
     await signInAs(tester, 'me@stackly.com');
 
-    // Scroll the rail rather than asserting everything fits on screen.
-    for (final module in kModules) {
+    for (final service in kSidebarServices) {
       expect(
-        find.text(module.title),
-        findsWidgets,
-        reason: '${module.title} missing from the sidebar for a super admin',
+        find.text(service.title.toUpperCase()),
+        findsOneWidget,
+        reason: '${service.title} missing from the sidebar for a super admin',
       );
     }
   });

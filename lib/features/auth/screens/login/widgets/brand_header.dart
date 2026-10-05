@@ -12,20 +12,20 @@ class BrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!tall) return const _PhoneHeader();
     return Container(
       width: double.infinity,
       color: const Color(0xFF05060F),
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(24, 22, 24, tall ? 22 : 26),
+          padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
           child: Column(
-            mainAxisAlignment:
-                tall ? MainAxisAlignment.center : MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const StacklyLogo(),
-              if (tall) const Spacer() else const SizedBox(height: 20),
+              const Spacer(),
               Text(
                 'CLOUD PLATFORM  ·  HRMS  ·  CRM  ·  ERP  ·  FINANCE  ·  AI',
                 style: OE.mono.copyWith(
@@ -36,8 +36,8 @@ class BrandHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              Text.rich(
-                const TextSpan(
+              const Text.rich(
+                TextSpan(
                   children: [
                     TextSpan(text: 'One identity.\n'),
                     TextSpan(
@@ -48,14 +48,86 @@ class BrandHeader extends StatelessWidget {
                   ],
                 ),
                 style: TextStyle(
-                  fontSize: tall ? 40 : 26,
+                  fontSize: 40,
                   height: 1.25,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -.5,
                   color: Colors.white,
                 ),
               ),
-              if (tall) const Spacer(flex: 2),
+              const Spacer(flex: 2),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The phone header, sized off the sign-in mock at 360 logical px wide: the
+/// same logo, eyebrow and headline as the cover page, compacted.
+class _PhoneHeader extends StatelessWidget {
+  const _PhoneHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: Colors.black,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 25.5, 22, 30),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Image.asset(
+                'assets/stackly_logo.png',
+                height: 32,
+                filterQuality: FilterQuality.medium,
+                semanticLabel: 'Stackly',
+              ),
+              const SizedBox(height: 15),
+              Padding(
+                padding: const EdgeInsets.only(left: 1.5),
+                child: Text(
+                  // Broken by hand where the mock breaks it, so the wrap does
+                  // not depend on which monospace font the platform supplies.
+                  'CLOUD PLATFORM  ·  HRMS  ·  CRM  ·  ERP  ·\nFINANCE  ·  AI',
+                  style: OE.mono.copyWith(
+                    fontSize: 9.5,
+                    letterSpacing: 1.3,
+                    height: 11.7 / 9.5,
+                    color: const Color(0xFF8A93A6),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Padding(
+                padding: EdgeInsets.only(left: 1.5),
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: 'One identity.\n',
+                        style: TextStyle(letterSpacing: 0),
+                      ),
+                      TextSpan(
+                        text: 'Infinite ',
+                        style: TextStyle(color: Color(0xFF4F7FF1)),
+                      ),
+                      TextSpan(text: 'Potential.'),
+                    ],
+                  ),
+                  style: TextStyle(
+                    fontSize: 27,
+                    height: 29 / 27,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -.5,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ],
           ),
         ),

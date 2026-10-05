@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stackly_auth/auth.dart';
+import 'package:stackly_auth/core/platform/modules.dart';
 import 'package:stackly_auth/dashboard.dart';
 import 'package:stackly_auth/providers/auth_provider.dart';
 import 'package:stackly_auth/providers/navigation_provider.dart';
@@ -82,14 +83,17 @@ void main() {
   testWidgets('every sidebar subheading routes to its page', (tester) async {
     final app = await signedIn(tester);
 
-    // Each rail entry drives the URL.
+    // Service headings expand; their sub-modules and the ORGANIZATION links
+    // drive the URL.
+    await tester.tap(find.text('PLATFORM ADMINISTRATION'));
+    await step(tester);
     const entries = {
-      'Platform Administration': '/admin/overview',
+      'Global Settings': '/admin/global-settings',
       'Platform Configuration': '/admin/settings',
       'License Management': '/admin/licenses',
-      'Settings': AppRoutes.settings,
+      'Tenant Template': '/admin/tenant-templates',
+      'Company Setup': '/admin/organizations',
       'User Management': '/admin/users',
-      'Super Admin Dashboard': AppRoutes.dashboard,
     };
     for (final MapEntry(key: label, value: path) in entries.entries) {
       await tester.tap(find
@@ -98,6 +102,30 @@ void main() {
       await step(tester);
       expect(app.router.location, path, reason: label);
     }
+  });
+
+  test('every service sub-module is a registered page', () {
+    for (final service in kSidebarServices) {
+      final module = kModulesById[service.module];
+      expect(module, isNotNull, reason: service.module);
+      for (final MapEntry(key: label, value: slug) in service.pages.entries) {
+        expect(module!.page(slug), isNotNull, reason: '$label → $slug');
+      }
+    }
+  });
+
+  testWidgets('a service heading toggles its sub-modules', (tester) async {
+    await signedIn(tester);
+    Finder inRail(String text) => find.descendant(
+        of: find.byType(AppSidebar), matching: find.text(text));
+
+    expect(inRail('Payroll'), findsNothing);
+    await tester.tap(inRail('HRMS'));
+    await step(tester);
+    expect(inRail('Payroll'), findsOneWidget);
+    await tester.tap(inRail('HRMS'));
+    await step(tester);
+    expect(inRail('Payroll'), findsNothing);
   });
 
   testWidgets('the highlight follows a URL change, not just a tap',
@@ -138,13 +166,13 @@ void main() {
     // only sidebar in the tree, but be explicit rather than relying on order.
     final inDrawer = find.descendant(
       of: find.byType(Drawer),
-      matching: find.text('Settings'),
+      matching: find.text('Company Setup'),
     );
     expect(inDrawer, findsOneWidget);
     await tester.tap(inDrawer);
     await step(tester);
 
-    expect(app.router.location, AppRoutes.settings);
+    expect(app.router.location, '/admin/organizations');
     expect(app.navigation.isMobileDrawerOpen, isFalse);
   });
 }

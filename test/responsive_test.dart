@@ -117,7 +117,7 @@ void main() {
     await step(tester);
     // Sidebar nav is now reachable from the drawer.
     expect(find.text('Log out'), findsOneWidget);
-    expect(find.text('Platform Configuration'), findsOneWidget);
+    expect(find.text('PLATFORM ADMINISTRATION'), findsOneWidget);
 
     // The drawer closes on its own X, not just the scrim.
     await tester.tap(find.byTooltip('Close menu'));
