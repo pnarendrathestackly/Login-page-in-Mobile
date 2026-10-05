@@ -52,7 +52,7 @@ void main() {
   /// asserted there. The sign-in form is short and must fit whole.
   List<String> anchorsFor({required bool signup}) => signup
       ? const ['Tell us about your organization']
-      : const ['Sign in', 'Continue', 'Talk to sales'];
+      : const ['Sign in', 'Continue', 'Create New Account'];
 
   for (final window in desktop) {
     final label = '${window.width.toInt()}x${window.height.toInt()}';

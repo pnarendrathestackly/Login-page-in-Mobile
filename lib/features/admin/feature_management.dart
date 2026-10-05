@@ -404,7 +404,7 @@ class _FeatureManagementState extends State<FeatureManagementScreen> {
                             ),
                             _FilterMenu(
                               label: switch (_enabled) {
-                                null => 'All Status',
+                                null => 'All Statuses',
                                 true => 'Enabled',
                                 false => 'Disabled',
                               },

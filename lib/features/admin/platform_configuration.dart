@@ -488,7 +488,7 @@ class _SavedBanner extends StatelessWidget {
             const SizedBox(width: 18),
             Expanded(
               child: Text(
-                'Your changes has been saved successfully.',
+                'Your changes have been saved successfully.',
                 style: _mono.copyWith(
                   fontSize: 17,
                   color: const Color(0xFF15803D),
@@ -827,7 +827,7 @@ class _DeploymentNote extends StatelessWidget {
                 ),
                 SizedBox(height: 14),
                 Text(
-                  'Changes to Core Platform configurations may require a '
+                  'Changes to the core platform configuration may require a '
                   'service restart for integrated modules to reflect the '
                   'updates completely.',
                   style: TextStyle(fontSize: 15, color: _body),

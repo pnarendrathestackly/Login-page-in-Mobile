@@ -358,7 +358,7 @@ const List<String> industries = [
   'Professional Services',
   'Legal',
   'Agriculture',
-  'Aerospace & Defence',
+  'Aerospace & Defense',
   'Public Sector',
   'Non-profit & NGO',
   'Other',

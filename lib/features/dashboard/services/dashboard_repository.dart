@@ -213,7 +213,7 @@ class DemoDashboardRepository implements DashboardRepository {
       ],
       tasks: [
         Task(
-          name: 'Finalise data migration plan',
+          name: 'Finalize data migration plan',
           project: 'Atlas Migration',
           priority: Priority.critical,
           assignee: 'Arun Kumar',

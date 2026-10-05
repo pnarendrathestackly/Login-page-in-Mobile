@@ -366,7 +366,7 @@ class _LoginFormState extends State<LoginForm> {
                   ),
                 ),
                 _Link(
-                  _compact ? 'Create an account' : 'Talk to sales',
+                  _compact ? 'Create an account' : 'Create New Account',
                   fontSize: _compact ? 13.5 : 14.5,
                   color: _compact ? _phoneLink : OE.link,
                   // Routing is centralized: this reports intent only.
@@ -793,7 +793,7 @@ class _MicrosoftMark extends StatelessWidget {
   }
 }
 
-/// Bold navy inline link ("Find it here", "Talk to sales").
+/// Bold navy inline link ("Find it here", "Create New Account").
 class _Link extends StatelessWidget {
   const _Link(
     this.text, {

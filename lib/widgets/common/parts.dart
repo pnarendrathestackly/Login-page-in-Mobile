@@ -316,7 +316,9 @@ class ErrorState extends StatelessWidget {
 String relativeTime(DateTime at, [DateTime? now]) {
   final d = (now ?? DateTime.now()).difference(at);
   if (d.inMinutes < 1) return 'just now';
-  if (d.inMinutes < 60) return '${d.inMinutes} minutes ago';
+  if (d.inMinutes < 60) {
+    return '${d.inMinutes} ${d.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+  }
   if (d.inHours < 24) {
     return '${d.inHours} ${d.inHours == 1 ? 'hour' : 'hours'} ago';
   }

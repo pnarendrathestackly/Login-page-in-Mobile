@@ -360,7 +360,8 @@ class _JobsTabState extends State<_JobsTab>
               ],
             ),
             const SizedBox(height: 8),
-            Text('${j.department} · ${j.location} · ${j.openings} seat(s)',
+            Text(
+                '${j.department} · ${j.location} · ${j.openings} ${j.openings == 1 ? 'seat' : 'seats'}',
                 style: const TextStyle(fontSize: 12.5, color: kMuted)),
             Align(
               alignment: Alignment.centerRight,

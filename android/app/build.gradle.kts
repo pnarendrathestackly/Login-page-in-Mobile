@@ -4,7 +4,8 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-android {
+// Typed form of `android { }`: the generated accessor is deprecated in AGP 9.
+configure<com.android.build.api.dsl.ApplicationExtension> {
     namespace = "com.example.stackly_auth"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "30.0.16248370" // ponytail: pin to installed NDK; flutter.ndkVersion triggers a crashing sdkmanager auto-install
@@ -30,7 +31,7 @@ android {
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")

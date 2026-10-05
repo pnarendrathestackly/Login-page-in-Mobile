@@ -398,7 +398,7 @@ class _EnrollmentsTabState extends State<_EnrollmentsTab>
   @override
   IconData get emptyIcon => Icons.school_outlined;
   @override
-  String? get emptyActionLabel => 'Enrol Employee';
+  String? get emptyActionLabel => 'Enroll Employee';
   @override
   VoidCallback? get onEmptyAction => _enrol;
 
@@ -440,7 +440,7 @@ class _EnrollmentsTabState extends State<_EnrollmentsTab>
   }
 
   @override
-  Widget? primaryAction() => hrmsAddButton('Enrol Employee', _enrol);
+  Widget? primaryAction() => hrmsAddButton('Enroll Employee', _enrol);
 
   Future<void> _enrol() async {
     if (_courses.isEmpty || _employees.isEmpty) return;

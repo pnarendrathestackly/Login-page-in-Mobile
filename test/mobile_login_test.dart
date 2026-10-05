@@ -105,12 +105,13 @@ void main() {
   testWidgets('phone form scrolls to the sign-up link', (tester) async {
     await pumpLogin(tester, const Size(390, 844));
 
+    // Phones link to self-serve sign-up; desktop shows "Create New Account".
     await tester.scrollUntilVisible(
-      find.text('Talk to sales'),
+      find.text('Create an account'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.text('Talk to sales'), findsOneWidget);
+    expect(find.text('Create an account'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

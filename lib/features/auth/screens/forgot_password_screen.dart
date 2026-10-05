@@ -145,7 +145,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         alignment: WrapAlignment.center,
         children: [
           const Text(
-            "Didn't get it? Check spam, or ",
+            "Didn't get it? Check spam or ",
             style: TextStyle(fontSize: 13.5, color: OE.muted),
           ),
           InkWell(

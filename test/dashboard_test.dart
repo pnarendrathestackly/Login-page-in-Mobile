@@ -331,7 +331,7 @@ void main() {
         await tester.tap(save());
         await step(tester);
         expect(platformConfig.value.name, 'Acme Cloud');
-        expect(find.text('Your changes has been saved successfully.'),
+        expect(find.text('Your changes have been saved successfully.'),
             findsOneWidget);
       });
 

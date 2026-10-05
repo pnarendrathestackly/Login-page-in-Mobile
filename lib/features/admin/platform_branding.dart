@@ -27,7 +27,7 @@ final platformBranding = ValueNotifier<Branding>((
   platformName: 'Java Enterprise Suite',
   companyName: 'Oracle Corporation',
   tagline: 'Empowering Enterprise Intelligence',
-  footer: 'System Maintained by IT Dept.',
+  footer: 'System maintained by IT Dept.',
   copyright: '© 2024 platform branding. All rights reserved.',
   welcome:
       'Welcome to Java Enterprise Suite.\nPlease authenticate to continue.',
@@ -1081,8 +1081,8 @@ class _RulesCard extends StatelessWidget {
   const _RulesCard();
 
   static const _validation = [
-    'Images: PNG, JPG, SVG max 5MB. Background max 10MB.',
-    'Text fields max 100 chars; Messages max 250 chars.',
+    'Images: PNG, JPG or SVG, max 5MB. Background: max 10MB.',
+    'Text fields: max 100 characters. Messages: max 250 characters.',
     'Colors must be valid hex values.',
   ];
 

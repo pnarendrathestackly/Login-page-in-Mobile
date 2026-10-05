@@ -254,7 +254,7 @@ void main() {
   testWidgets('sign-up stacks over login and pops back to it', (tester) async {
     final (_, app) = await boot(tester);
 
-    await tester.tap(find.text('Talk to sales'));
+    await tester.tap(find.text('Create New Account'));
     await step(tester);
     expect(app.router.location, AppRoutes.register);
     expect(find.text('Tell us about your organization'), findsOneWidget);

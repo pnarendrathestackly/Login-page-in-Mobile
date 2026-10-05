@@ -183,7 +183,7 @@ class SuperAdminDashboard extends StatelessWidget implements OwnsPageHeading {
         ),
         (
           title: 'Notifications',
-          sub: 'Notification centre',
+          sub: 'Notification Center',
           icon: Icons.notifications_none,
           path: AppRoutes.notifications,
         ),
@@ -196,7 +196,7 @@ class SuperAdminDashboard extends StatelessWidget implements OwnsPageHeading {
         ),
         (
           title: 'Reports',
-          sub: 'Platform analytics',
+          sub: 'Platform Analytics',
           icon: Icons.show_chart,
           path: AppRoutes.reports,
         ),

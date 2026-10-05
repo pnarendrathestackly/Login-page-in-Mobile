@@ -83,7 +83,7 @@ class _ReportsPageState extends State<ReportsPage> {
             'Team',
             p.name,
             '${p.delivered} delivered, '
-                '${(p.utilisation * 100).round()}% utilised'
+                '${(p.utilisation * 100).round()}% utilized'
           ],
       ]),
     );
@@ -235,7 +235,7 @@ class _ReportsPageState extends State<ReportsPage> {
 
             final revenue = _ChartPanel(
               title: 'Revenue Performance',
-              subtitle: 'Monthly recognised revenue, in thousands.',
+              subtitle: 'Monthly recognized revenue, in thousands.',
               child: AreaChart(series: data.revenue, height: 240),
             );
             final growth = _ChartPanel(

@@ -17,12 +17,21 @@ Future<void> _font(String family, List<String> files) async {
   await l.load();
 }
 
+/// The SDK's bundled Material fonts, found via FLUTTER_ROOT (set by
+/// `flutter test`) rather than a fixed install path.
+final _fonts =
+    '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts';
+
 void main() {
   testWidgets('signin shot', (tester) async {
     await tester.runAsync(() async {
-      await _font('Roboto', ['C:/flutter/bin/cache/artifacts/material_fonts/roboto-regular.ttf', 'C:/flutter/bin/cache/artifacts/material_fonts/roboto-medium.ttf', 'C:/flutter/bin/cache/artifacts/material_fonts/roboto-bold.ttf']);
+      await _font('Roboto', [
+        '$_fonts/roboto-regular.ttf',
+        '$_fonts/roboto-medium.ttf',
+        '$_fonts/roboto-bold.ttf',
+      ]);
       await _font('Consolas', ['C:/Windows/Fonts/consola.ttf']);
-      await _font('MaterialIcons', ['C:/flutter/bin/cache/artifacts/material_fonts/materialicons-regular.otf']);
+      await _font('MaterialIcons', ['$_fonts/materialicons-regular.otf']);
     });
     tester.view.physicalSize = const Size(360, 889);
     tester.view.devicePixelRatio = 1;

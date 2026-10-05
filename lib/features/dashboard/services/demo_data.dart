@@ -392,7 +392,7 @@ abstract final class DemoData {
         ),
         ProjectRecord(
           id: 'p-3007',
-          name: 'Campus Enrolment Portal',
+          name: 'Campus Enrollment Portal',
           customer: 'Beacon Education',
           manager: 'Priya Raman',
           team: const ['Sofia Marchetti'],
@@ -467,7 +467,7 @@ abstract final class DemoData {
   static List<TaskRecord> tasks(DateTime now) => [
         TaskRecord(
           id: 't-4001',
-          name: 'Finalise data migration cutover plan',
+          name: 'Finalize data migration cutover plan',
           project: 'Atlas Migration',
           assignee: 'Arun Kumar',
           priority: Priority.critical,
@@ -566,8 +566,8 @@ abstract final class DemoData {
         ),
         TaskRecord(
           id: 't-4010',
-          name: 'Migrate enrolment records to staging',
-          project: 'Campus Enrolment Portal',
+          name: 'Migrate enrollment records to staging',
+          project: 'Campus Enrollment Portal',
           assignee: 'Priya Raman',
           priority: Priority.low,
           stage: TaskStage.todo,
